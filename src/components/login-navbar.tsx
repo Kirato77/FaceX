@@ -1,14 +1,11 @@
 import { useColorMode } from "@kobalte/core";
-import {
-	IoCheckmarkCircleOutline,
-	IoLogoMicrosoft,
-	IoMoonOutline,
-	IoSunnyOutline,
-} from "solid-icons/io";
-import { RiMediaWebcamLine } from "solid-icons/ri";
 import { Show, createResource, createSignal } from "solid-js";
 import { Button } from "~/components/ui/button";
 import { supabase } from "~/supabase-client";
+import IconMicrosoftFill from "~icons/ri/microsoft-fill";
+import IconMoonLine from "~icons/ri/moon-line";
+import IconSunLine from "~icons/ri/sun-line";
+import IconWebcamLine from "~icons/ri/webcam-line";
 
 export default function LoginNavbar() {
 	const [loading, setLoading] = createSignal(false);
@@ -41,7 +38,7 @@ export default function LoginNavbar() {
 			class={`flex items-right justify-between p-4 ${colorMode() === "light" ? "bg-gray-100" : "bg-gray-900"} shadow-md sticky top-0 z-50`}
 		>
 			<div class="flex items-center">
-				<RiMediaWebcamLine class="w-8 h-8 mr-1" />
+				<IconWebcamLine class="w-8 h-8 mr-1" />
 				FaceX
 			</div>
 
@@ -54,7 +51,7 @@ export default function LoginNavbar() {
 						role="button"
 						tabIndex={0}
 					>
-						<IoLogoMicrosoft class="mr-2" />
+						<IconMicrosoftFill class="mr-2" />
 						Login with Microsoft
 					</Button>
 				</div>
@@ -68,9 +65,9 @@ export default function LoginNavbar() {
 				>
 					<Show
 						when={colorMode() === "light"}
-						fallback={<IoMoonOutline class="w-5 h-5 mr-1" />}
+						fallback={<IconMoonLine class="w-5 h-5 mr-1" />}
 					>
-						<IoSunnyOutline class="w-5 h-5 mr-1" />
+						<IconSunLine class="w-5 h-5 mr-1" />
 					</Show>
 				</div>
 			</div>

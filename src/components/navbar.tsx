@@ -1,14 +1,6 @@
 import { useColorMode } from "@kobalte/core";
 import { useLocation } from "@solidjs/router";
-import {
-	IoCheckmarkCircleOutline,
-	IoLogOutOutline,
-	IoMoonOutline,
-	IoPersonCircleOutline,
-	IoSunnyOutline,
-} from "solid-icons/io";
-import { RiMediaWebcamLine } from "solid-icons/ri";
-import { Show, createResource, createSignal } from "solid-js";
+import { Show, createSignal } from "solid-js";
 import { Button } from "~/components/ui/button";
 import {
 	Dialog,
@@ -27,6 +19,12 @@ import {
 	DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { supabase } from "~/supabase-client";
+import IconCheckboxCircleLine from "~icons/ri/checkbox-circle-line";
+import IconLogoutBoxLine from "~icons/ri/logout-box-line";
+import IconMoonLine from "~icons/ri/moon-line";
+import IconSunLine from "~icons/ri/sun-line";
+import IconUserLine from "~icons/ri/user-line";
+import IconWebcamLine from "~icons/ri/webcam-line";
 import { UserContextProvider, useUserContext } from "./context";
 
 export default function Navbar() {
@@ -41,7 +39,7 @@ export default function Navbar() {
 		>
 			<div class="flex items-center">
 				<a href="/" class="flex flex-row font-bold text-lg">
-					<RiMediaWebcamLine class="w-8 h-8 mr-1" />
+					<IconWebcamLine class="w-8 h-8 mr-1" />
 					FaceX
 				</a>
 			</div>
@@ -61,7 +59,7 @@ export default function Navbar() {
 						href="/tracking"
 						class={`flex flex-row ${location.pathname === "/tracking" ? "text-blue-500" : "group-hover:text-blue-500"}`}
 					>
-						<IoCheckmarkCircleOutline class="w-6 h-6 mr-1" />
+						<IconCheckboxCircleLine class="w-6 h-6 mr-1" />
 						Tracking
 					</a>
 				</div>
@@ -77,7 +75,7 @@ export default function Navbar() {
 				<div class="flex items-center group cursor-pointer">
 					<DropdownMenu>
 						<DropdownMenuTrigger class="flex flex-row group-hover:text-blue-500">
-							<IoPersonCircleOutline class="w-6 h-6 mr-1" />
+							<IconUserLine class="w-6 h-6 mr-1" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent>
 							<DropdownMenuLabel>{`My Account -  ${user()?.role}`}</DropdownMenuLabel>
@@ -90,9 +88,9 @@ export default function Navbar() {
 							>
 								<Show
 									when={colorMode() === "light"}
-									fallback={<IoMoonOutline class="w-5 h-5 mr-1" />}
+									fallback={<IconMoonLine class="w-5 h-5 mr-1" />}
 								>
-									<IoSunnyOutline class="w-5 h-5 mr-1" />
+									<IconSunLine class="w-5 h-5 mr-1" />
 								</Show>
 								Toggle theme
 							</DropdownMenuItem>
@@ -100,7 +98,7 @@ export default function Navbar() {
 								class="!text-red-600"
 								onSelect={() => setOpen(true)}
 							>
-								<IoLogOutOutline class="w-5 h-5 mr-1" />
+								<IconLogoutBoxLine class="w-5 h-5 mr-1" />
 								Log out
 							</DropdownMenuItem>
 						</DropdownMenuContent>

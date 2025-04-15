@@ -43,7 +43,6 @@ export default function StudentView() {
 		async (status) => {
 			if (!status) return null;
 			const data = await getAttendanceByStatus(studentEmail(), status);
-			console.log(data);
 			return data;
 		},
 	);
@@ -53,13 +52,11 @@ export default function StudentView() {
 		async (email) => {
 			if (!email) return null;
 			const data = await getStudentAttenceStatus(email);
-			console.log(data);
 			return data;
 		},
 	);
 
 	const handleAttendanceChange = (payload: any) => {
-		// console.log("Change received!", payload);
 		if (payload.new.student_email === studentEmail()) {
 			refetch(); // Re-fetch the attendances data whenever a change is detected related to connected student
 		}

@@ -4,6 +4,45 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const storageBucket = "id-pictures";
 
+export interface Course {
+	course_id: number;
+	course_name: string;
+	late_time_interval: [number, number];
+}
+
+export interface Block {
+	block_id: number;
+	block_name: string;
+	start_time: string;
+	end_time: string;
+}
+
+export interface User {
+	email: string;
+	role: string;
+	matricule: string;
+}
+
+export interface Attendance {
+	name: string;
+	status: string;
+	timestamp: string;
+}
+
+export interface StudentAttendanceStatus {
+	present: number;
+	absent: number;
+	retard: number;
+}
+
+export interface AttendanceForClassBlock {
+	student_email: string;
+	student_full_name: string;
+	attendance_status: string;
+	matricule: string;
+	attendance_id: number;
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // REQUESTS
@@ -24,7 +63,7 @@ export async function getCoursesByInstructorId(instructorEmail: string) {
 			`Error fetching data for get_courses_by_instructor: ${error.message}`,
 		);
 	}
-	return data;
+	return data as Course[];
 }
 
 export async function getClassBlocksByCourseId(courseId: number) {
@@ -36,7 +75,7 @@ export async function getClassBlocksByCourseId(courseId: number) {
 			`Error fetching data for get_blocks_by_course: ${error.message}`,
 		);
 	}
-	return data;
+	return data as Block[];
 }
 
 export async function getUserByEmail(email: string | undefined) {
@@ -48,7 +87,7 @@ export async function getUserByEmail(email: string | undefined) {
 			`Error fetching data for get_user_by_email: ${error.message}`,
 		);
 	}
-	return data;
+	return data as User;
 }
 
 export async function getAttendanceByEmail(email: string) {
@@ -60,7 +99,7 @@ export async function getAttendanceByEmail(email: string) {
 			`Error fetching data for get_attendance_by_email: ${error.message}`,
 		);
 	}
-	return data;
+	return data as Attendance[];
 }
 
 export async function getAttendanceByStatus(email: string, status: string) {
@@ -73,7 +112,7 @@ export async function getAttendanceByStatus(email: string, status: string) {
 			`Error fetching data for get_attendance_by_status: ${error.message}`,
 		);
 	}
-	return data;
+	return data as Attendance[];
 }
 
 export async function getStudentAttenceStatus(email: string) {
@@ -85,7 +124,7 @@ export async function getStudentAttenceStatus(email: string) {
 			`Error fetching data for get_student_attendance_status: ${error.message}`,
 		);
 	}
-	return data;
+	return data as StudentAttendanceStatus;
 }
 
 export async function getStudentStatsForCourse(
@@ -113,7 +152,7 @@ export async function getAttendanceForClassBlock(class_block_id: number) {
 			`Error fetching data for get_attendance_for_class_block: ${error.message}`,
 		);
 	}
-	return data;
+	return data as AttendanceForClassBlock[];
 }
 
 export async function updateAttendanceForClassBlock(

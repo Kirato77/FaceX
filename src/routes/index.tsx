@@ -3,7 +3,7 @@ import { useUserContext } from "~/components/context";
 
 export default function Home() {
 	const { user } = useUserContext();
-
+	
 	return (
 		<main>
 			<Show when={user()} fallback="User is not defined">
