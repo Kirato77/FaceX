@@ -1,8 +1,4 @@
-import {
-	createMemo,
-	createRenderEffect,
-	createSignal,
-} from "solid-js";
+import { createMemo, createRenderEffect, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Button } from "~/components/ui/button";
 import {
@@ -26,10 +22,10 @@ import {
 	TextFieldInput,
 	TextFieldLabel,
 } from "~/components/ui/text-field";
+import { showToast } from "~/components/ui/toast";
 import { updateLateTimeInterval } from "~/supabase-client";
 import IconRefreshLine from "~icons/ri/refresh-line";
 import { useTrackingInstructorContext } from "./context";
-import { showToast } from "~/components/ui/toast";
 
 export function EditCourse() {
 	const {
@@ -132,11 +128,12 @@ export function EditCourse() {
 								refetchCourses();
 								setLoading(false);
 								setOpenEditCourseDialog(false);
-                showToast({
-                  variant: "success",
-                  title: "Cours mis à jour",
-                  description: "Les paramètres du cours ont été mis à jour avec succès.",
-                });
+								showToast({
+									variant: "success",
+									title: "Cours mis à jour",
+									description:
+										"Les paramètres du cours ont été mis à jour avec succès.",
+								});
 							});
 						}}
 					>

@@ -48,7 +48,6 @@ export default function LoginNavbar() {
 						onClick={handleLogin}
 						disabled={loading()}
 						onKeyDown={(e: KeyboardEvent) => e.key === "Enter" && handleLogin}
-						role="button"
 						tabIndex={0}
 					>
 						<IconMicrosoftFill class="mr-2" />

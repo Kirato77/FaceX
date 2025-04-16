@@ -1,9 +1,10 @@
 import { createEffect, createResource } from "solid-js";
+import { reconcile } from "solid-js/store";
 import { getClassBlocksByCourseId } from "~/supabase-client";
 import { useTrackingInstructorContext } from "./context";
-import { reconcile } from "solid-js/store";
 export function BlockLoader() {
-  const { selectedCourseId, setSelectedBlockId, setBlocks } = useTrackingInstructorContext();
+	const { selectedCourseId, setSelectedBlockId, setBlocks } =
+		useTrackingInstructorContext();
 
 	const [blocks] = createResource(
 		selectedCourseId,
@@ -15,9 +16,9 @@ export function BlockLoader() {
 		{ initialValue: [] },
 	);
 
-  createEffect(() => {
-    setBlocks(reconcile(blocks()));
-  });
+	createEffect(() => {
+		setBlocks(reconcile(blocks()));
+	});
 
-  return <></>;
+	return <></>;
 }

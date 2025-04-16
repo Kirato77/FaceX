@@ -1,11 +1,12 @@
 import { createEffect, createResource } from "solid-js";
+import { reconcile } from "solid-js/store";
 import { getAttendanceForClassBlock } from "~/supabase-client";
 import { useTrackingInstructorContext } from "./context";
-import { reconcile } from "solid-js/store";
 
 export function AttendancesLoader() {
-	const { selectedBlockId, setAttendances, onRefetchAttendances } = useTrackingInstructorContext();
-  
+	const { selectedBlockId, setAttendances, onRefetchAttendances } =
+		useTrackingInstructorContext();
+
 	const [attendances, { refetch: refetchAttendances }] = createResource(
 		selectedBlockId,
 		async (blockId) => {
@@ -19,9 +20,9 @@ export function AttendancesLoader() {
 		refetchAttendances();
 	});
 
-  createEffect(() => {
-    setAttendances(reconcile(attendances()));
-  });
+	createEffect(() => {
+		setAttendances(reconcile(attendances()));
+	});
 
-  return <></>;
+	return <></>;
 }

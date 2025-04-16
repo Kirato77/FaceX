@@ -1,5 +1,12 @@
 import { saveAs } from "file-saver";
-import { For, Show, Suspense, createSignal, onCleanup, useTransition } from "solid-js";
+import {
+	For,
+	Show,
+	Suspense,
+	createSignal,
+	onCleanup,
+	useTransition,
+} from "solid-js";
 import * as XLSX from "xlsx";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
@@ -45,13 +52,13 @@ import {
 	supabase,
 	updateAttendanceForClassBlock,
 } from "~/supabase-client";
+import { AttendancesLoader } from "./attendances-loader";
+import { BlockLoader } from "./block-loader";
 import { useTrackingInstructorContext } from "./context";
+import { CourseLoader } from "./course-loader";
 import { EditCourse } from "./edit-course";
 import { StudentDetails } from "./student-details";
 import { StudentStatsLoader } from "./student-stats-loader";
-import { CourseLoader } from "./course-loader";
-import { BlockLoader } from "./block-loader";
-import { AttendancesLoader } from "./attendances-loader";
 
 export default function InstructorView() {
 	const {
@@ -72,20 +79,20 @@ export default function InstructorView() {
 
 	// Handle real-time inserts, updates and deletes
 	const handleAttendanceChange = (payload: any) => {
-    if (payload.eventType === "DELETE") {
-      setAttendances((state) => {
-        return state.map((attendance) => {
-          if (attendance.attendance_id === payload.old.attendance_id) {
-            return {
-              ...attendance,
-              attendance_status: "Absent",
-            };
-          }
-          return attendance;
-        });
-      });
-      return;
-    }
+		if (payload.eventType === "DELETE") {
+			setAttendances((state) => {
+				return state.map((attendance) => {
+					if (attendance.attendance_id === payload.old.attendance_id) {
+						return {
+							...attendance,
+							attendance_status: "Absent",
+						};
+					}
+					return attendance;
+				});
+			});
+			return;
+		}
 
 		if (payload.new.block_id === selectedBlockId()) {
 			refetchAttendances(); // Re-fetch the attendances data whenever a change is detected related to the selected class block
@@ -147,14 +154,11 @@ export default function InstructorView() {
 	};
 
 	const exportGroupsToExcel = () => {
-		let fileName = prompt(
-			"Entrez le nom du fichier :",
-			"groupes",
-		);
+		let fileName = prompt("Entrez le nom du fichier :", "groupes");
 
-    if (fileName?.endsWith(".xlsx")) {
-      fileName = fileName.slice(0, -5);
-    }
+		if (fileName?.endsWith(".xlsx")) {
+			fileName = fileName.slice(0, -5);
+		}
 
 		if (fileName) {
 			const workbook = XLSX.utils.book_new();
@@ -199,13 +203,12 @@ export default function InstructorView() {
 
 	return (
 		<div class="flex flex-col p-5">
-      <Suspense>
-        <CourseLoader />
-        <BlockLoader />
-        <AttendancesLoader />
-        <StudentStatsLoader />
-      </Suspense>
-
+			<Suspense>
+				<CourseLoader />
+				<BlockLoader />
+				<AttendancesLoader />
+				<StudentStatsLoader />
+			</Suspense>
 
 			<Title>FaceX - Tracking</Title>
 			<div class="flex flex-wrap justify-between gap-2">
@@ -215,7 +218,7 @@ export default function InstructorView() {
 						value={selectedCourse()}
 						onChange={(course) => {
 							if (course) {
-                setSelectedCourseId(course.course_id);
+								setSelectedCourseId(course.course_id);
 							}
 						}}
 						optionValue="course_id"
@@ -234,12 +237,10 @@ export default function InstructorView() {
 					</Select>
 					<Select
 						options={blocks}
-						value={blocks.find(
-							(block) => block.block_id === selectedBlockId(),
-						)}
+						value={blocks.find((block) => block.block_id === selectedBlockId())}
 						onChange={(block) => {
 							if (block) {
-                setSelectedBlockId(block.block_id);
+								setSelectedBlockId(block.block_id);
 							}
 						}}
 						optionValue="block_id"
@@ -276,10 +277,10 @@ export default function InstructorView() {
 										class="flex h-5 w-5 p-3"
 										title="Refresh"
 										onClick={() => {
-                      if (attendances.length > 0) {
-                        setShowWheel(false);
-                        setShowWheel(true);
-                      }
+											if (attendances.length > 0) {
+												setShowWheel(false);
+												setShowWheel(true);
+											}
 										}}
 									>
 										<IconRefreshLine class="h-5 w-5 text-white" />
@@ -500,7 +501,7 @@ export default function InstructorView() {
 										<CardTitle>{attendance.student_full_name}</CardTitle>
 										<CardFooter>
 											<Badge
-                        as={Button}
+												as={Button}
 												onClick={(e) => {
 													if (selectedBlock()?.block_id) {
 														updateAttendanceForClassBlock(
@@ -538,8 +539,8 @@ export default function InstructorView() {
 				</Show>
 			</div>
 
-      <EditCourse />
-      <StudentDetails />
+			<EditCourse />
+			<StudentDetails />
 		</div>
 	);
 }

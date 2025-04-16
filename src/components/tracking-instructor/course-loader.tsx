@@ -1,14 +1,15 @@
 import { createEffect, createResource } from "solid-js";
-import { getCoursesByInstructorId } from "~/supabase-client";
-import { useTrackingInstructorContext } from "./context";
-import { getSessionEmail } from "../context";
 import { reconcile } from "solid-js/store";
+import { getCoursesByInstructorId } from "~/supabase-client";
+import { getSessionEmail } from "../context";
+import { useTrackingInstructorContext } from "./context";
 
 export function CourseLoader() {
 	const email = getSessionEmail;
-  const { setCourses, setSelectedCourseId, onRefetchCourses } = useTrackingInstructorContext();
+	const { setCourses, setSelectedCourseId, onRefetchCourses } =
+		useTrackingInstructorContext();
 
-  const [courses, { refetch: refetchCourses }] = createResource(
+	const [courses, { refetch: refetchCourses }] = createResource(
 		email,
 		async (email) => {
 			if (!email) return [];
@@ -17,13 +18,13 @@ export function CourseLoader() {
 		{ initialValue: [] },
 	);
 
-  onRefetchCourses(() => {
-    refetchCourses();
-  });
+	onRefetchCourses(() => {
+		refetchCourses();
+	});
 
-  createEffect(() => {
-    setCourses(reconcile(courses()));
-  });
+	createEffect(() => {
+		setCourses(reconcile(courses()));
+	});
 
-  return <></>;
+	return <></>;
 }

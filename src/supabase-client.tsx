@@ -27,6 +27,7 @@ export interface Attendance {
 	name: string;
 	status: string;
 	timestamp: string;
+	attendance_id: number;
 }
 
 export interface StudentAttendanceStatus {

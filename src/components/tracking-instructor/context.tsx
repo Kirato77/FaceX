@@ -1,18 +1,18 @@
 import {
 	type Accessor,
 	type ParentProps,
-	Setter,
+	type Setter,
 	createContext,
 	createMemo,
 	createSignal,
 	useContext,
 } from "solid-js";
-import { createStore, SetStoreFunction, StoreSetter } from "solid-js/store";
 import {
-	type AttendanceForClassBlock,
-	type Block,
-	type Course,
-} from "~/supabase-client";
+	type SetStoreFunction,
+	StoreSetter,
+	createStore,
+} from "solid-js/store";
+import type { AttendanceForClassBlock, Block, Course } from "~/supabase-client";
 
 export interface TrackingInstructorContextValue {
 	openEditCourseDialog: Accessor<boolean>;
@@ -22,25 +22,25 @@ export interface TrackingInstructorContextValue {
 		student: AttendanceForClassBlock | undefined,
 	) => void;
 	courses: Course[];
-  setCourses: SetStoreFunction<Course[]>;
+	setCourses: SetStoreFunction<Course[]>;
 	selectedCourse: Accessor<Course | undefined>;
 	refetchCourses: () => void;
-  onRefetchCourses: (callback: () => void) => void;
+	onRefetchCourses: (callback: () => void) => void;
 	blocks: Block[];
-  setBlocks: SetStoreFunction<Block[]>;
+	setBlocks: SetStoreFunction<Block[]>;
 	selectedBlock: Accessor<Block | undefined>;
 	selectedCourseId: Accessor<number | undefined>;
 	setSelectedCourseId: (id: number | undefined) => void;
 	selectedBlockId: Accessor<number | undefined>;
 	setSelectedBlockId: (id: number | undefined) => void;
 	attendances: AttendanceForClassBlock[];
-  setAttendances: SetStoreFunction<AttendanceForClassBlock[]>;
+	setAttendances: SetStoreFunction<AttendanceForClassBlock[]>;
 	refetchAttendances: () => void;
-  onRefetchAttendances: (callback: () => void) => void;
+	onRefetchAttendances: (callback: () => void) => void;
 	presentAttendances: () => AttendanceForClassBlock[];
 	studentStats: Accessor<any>;
-  setStudentStats: Setter<any>;
-  onRefetchStudentStats: (callback: () => void) => void;
+	setStudentStats: Setter<any>;
+	onRefetchStudentStats: (callback: () => void) => void;
 	selectedStudent: Accessor<AttendanceForClassBlock | undefined>;
 }
 
@@ -60,7 +60,6 @@ export function useTrackingInstructorContext() {
 }
 
 export function TrackingInstructorProvider(props: ParentProps) {
-
 	const [openEditCourseDialog, setOpenEditCourseDialog] = createSignal(false);
 	const [openStudentDetailsDialog, setOpenStudentDetailsDialog] =
 		createSignal(false);
@@ -69,20 +68,23 @@ export function TrackingInstructorProvider(props: ParentProps) {
 	const [selectedStudent, setSelectedStudent] =
 		createSignal<AttendanceForClassBlock>();
 
-  const [courses, setCourses] = createStore<Course[]>([]);
-  const [blocks, setBlocks] = createStore<Block[]>([]);
-  const [attendances, setAttendances] = createStore<AttendanceForClassBlock[]>([]);
-  const [studentStats, setStudentStats] = createSignal<any>(null);
+	const [courses, setCourses] = createStore<Course[]>([]);
+	const [blocks, setBlocks] = createStore<Block[]>([]);
+	const [attendances, setAttendances] = createStore<AttendanceForClassBlock[]>(
+		[],
+	);
+	const [studentStats, setStudentStats] = createSignal<any>(null);
 
-  const [getOnRefetchCourses, onRefetchCourses] = createSignal<(() => void)>();
-  const [getOnRefetchAttendances, onRefetchAttendances] = createSignal<(() => void)>(); 
-  const [getOnRefetchStudentStats, onRefetchStudentStats] = createSignal<(() => void)>();
+	const [getOnRefetchCourses, onRefetchCourses] = createSignal<() => void>();
+	const [getOnRefetchAttendances, onRefetchAttendances] =
+		createSignal<() => void>();
+	const [getOnRefetchStudentStats, onRefetchStudentStats] =
+		createSignal<() => void>();
 
 	const selectedCourseId = createMemo(() => {
 		if (courses.length === 0) return undefined;
 		return _selectedCourseId() ?? courses[0].course_id;
 	});
-
 
 	const selectedBlockId = createMemo(() => {
 		if (blocks.length === 0) return undefined;
@@ -126,21 +128,21 @@ export function TrackingInstructorProvider(props: ParentProps) {
 				selectedBlock,
 				openStudentDetailsDialog,
 				selectedStudent,
-        onRefetchAttendances: (cb) => onRefetchAttendances(() => cb),
-        onRefetchCourses: (cb) => onRefetchCourses(() => cb),
-        onRefetchStudentStats: (cb) => onRefetchStudentStats(() => cb),
-        setCourses,
-        setBlocks,
-        setAttendances,
-        setStudentStats,
+				onRefetchAttendances: (cb) => onRefetchAttendances(() => cb),
+				onRefetchCourses: (cb) => onRefetchCourses(() => cb),
+				onRefetchStudentStats: (cb) => onRefetchStudentStats(() => cb),
+				setCourses,
+				setBlocks,
+				setAttendances,
+				setStudentStats,
 				setOpenStudentDetailsDialog: (
 					student: AttendanceForClassBlock | undefined,
 				) => {
 					if (!student) {
 						setOpenStudentDetailsDialog(false);
-            setTimeout(() => {
-              setSelectedStudent(undefined);
-            }, 300);
+						setTimeout(() => {
+							setSelectedStudent(undefined);
+						}, 300);
 						return;
 					}
 					setSelectedStudent(student);

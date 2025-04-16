@@ -1,4 +1,5 @@
-import { Accessor, createMemo, onCleanup, Show } from "solid-js";
+import { type Accessor, Show, createMemo, onCleanup } from "solid-js";
+import type { JSX } from "solid-js";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
 	Dialog,
@@ -8,10 +9,9 @@ import {
 	DialogTitle,
 } from "~/components/ui/dialog";
 import { Separator } from "~/components/ui/separator";
+import { Skeleton } from "~/components/ui/skeleton";
 import { getPictureUrl } from "~/supabase-client";
 import { useTrackingInstructorContext } from "./context";
-import { JSX } from "solid-js";
-import { Skeleton } from "~/components/ui/skeleton";
 
 export function StudentDetails() {
 	const {
@@ -21,19 +21,19 @@ export function StudentDetails() {
 		selectedStudent,
 	} = useTrackingInstructorContext();
 
-
-  const studentStats: Accessor<{
-    present_count: number | JSX.Element,
-    late_count: number | JSX.Element,
-    absent_count: number | JSX.Element,
-  }> = createMemo(() => {
-    if (!_studentStats || !_studentStats() || !_studentStats()[0]) return {
-      present_count: <Skeleton height={16} width={32} radius={4}/>,
-      late_count: <Skeleton height={16} width={32} radius={4}/>,
-      absent_count: <Skeleton height={16} width={32} radius={4}/>,
-    };
-    return _studentStats()[0];
-  });
+	const studentStats: Accessor<{
+		present_count: number | JSX.Element;
+		late_count: number | JSX.Element;
+		absent_count: number | JSX.Element;
+	}> = createMemo(() => {
+		if (!_studentStats || !_studentStats() || !_studentStats()[0])
+			return {
+				present_count: <Skeleton height={16} width={32} radius={4} />,
+				late_count: <Skeleton height={16} width={32} radius={4} />,
+				absent_count: <Skeleton height={16} width={32} radius={4} />,
+			};
+		return _studentStats()[0];
+	});
 
 	return (
 		<Dialog
@@ -58,11 +58,9 @@ export function StudentDetails() {
 								<span>Matricule : {selectedStudent()?.matricule}</span>
 								<span>Statut : {selectedStudent()?.attendance_status}</span>
 								<Separator class="my-2" />
-                <span>
-                  Total présences : {studentStats().present_count}
-                </span>
-                <span>Total retards : {studentStats().late_count}</span>
-                <span>Total absences : {studentStats().absent_count}</span>
+								<span>Total présences : {studentStats().present_count}</span>
+								<span>Total retards : {studentStats().late_count}</span>
+								<span>Total absences : {studentStats().absent_count}</span>
 							</DialogDescription>
 						</DialogHeader>
 					</div>
