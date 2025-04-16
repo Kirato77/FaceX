@@ -4,7 +4,8 @@ import { getGroupsByCourse } from "~/supabase-client";
 import { useTrackingInstructorContext } from "./context";
 
 export function GroupsForCourseLoader() {
-	const { selectedCourseId, setGroupsForCourse, onRefetchGroupsForCourse } = useTrackingInstructorContext();
+	const { selectedCourseId, setGroupsForCourse, onRefetchGroupsForCourse } =
+		useTrackingInstructorContext();
 
 	const [groups, { refetch }] = createResource(
 		selectedCourseId,
@@ -15,12 +16,12 @@ export function GroupsForCourseLoader() {
 		{ initialValue: [] },
 	);
 
-  onRefetchGroupsForCourse(() => {
-    refetch();
-  });
+	onRefetchGroupsForCourse(() => {
+		refetch();
+	});
 
 	createEffect(() => {
-    console.log(groups());
+		console.log(groups());
 		setGroupsForCourse(reconcile(groups()));
 	});
 

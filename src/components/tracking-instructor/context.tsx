@@ -7,11 +7,14 @@ import {
 	createSignal,
 	useContext,
 } from "solid-js";
-import {
-	type SetStoreFunction,
-	createStore,
-} from "solid-js/store";
-import type { AttendanceForClassBlock, Block, Course, Group, User } from "~/supabase-client";
+import { type SetStoreFunction, createStore } from "solid-js/store";
+import type {
+	AttendanceForClassBlock,
+	Block,
+	Course,
+	Group,
+	User,
+} from "~/supabase-client";
 
 export interface TrackingInstructorContextValue {
 	openEditCourseDialog: Accessor<boolean>;

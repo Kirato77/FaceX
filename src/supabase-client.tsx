@@ -221,7 +221,7 @@ export async function getGroupsByCourse(course_id: number): Promise<Group[]> {
 
 export async function getGroupsByList(group_id: number): Promise<User[][]> {
 	const { data, error } = await supabase.rpc("get_groups_by_list", {
-		list_id: group_id ,
+		list_id: group_id,
 	});
 	if (error) {
 		throw new Error(
@@ -242,9 +242,7 @@ export async function addList(
 		list_name: list_name,
 	});
 	if (error) {
-		throw new Error(
-			`Error fetching data for add_list: ${error.message}`,
-		);
+		throw new Error(`Error fetching data for add_list: ${error.message}`);
 	}
 	return data;
 }

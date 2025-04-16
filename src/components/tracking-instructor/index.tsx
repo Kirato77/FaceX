@@ -46,26 +46,26 @@ import {
 } from "~/components/ui/select";
 import SpinWheel from "~/components/wheel";
 import {
-	addList,
 	type AttendanceForClassBlock,
 	type Block,
 	type Course,
+	type Group,
+	addList,
 	getPictureUrl,
-	Group,
 	supabase,
 	updateAttendanceForClassBlock,
 } from "~/supabase-client";
+import { TextField, TextFieldInput, TextFieldLabel } from "../ui/text-field";
+import { showToast } from "../ui/toast";
 import { AttendancesLoader } from "./attendances-loader";
 import { BlockLoader } from "./block-loader";
 import { useTrackingInstructorContext } from "./context";
 import { CourseLoader } from "./course-loader";
 import { EditCourse } from "./edit-course";
+import { GroupsByListLoader } from "./groups-by-list-loader";
+import { GroupsForCourseLoader } from "./groups-for-course-loader";
 import { StudentDetails } from "./student-details";
 import { StudentStatsLoader } from "./student-stats-loader";
-import { GroupsForCourseLoader } from "./groups-for-course-loader";
-import { GroupsByListLoader } from "./groups-by-list-loader";
-import { TextField, TextFieldInput, TextFieldLabel } from "../ui/text-field";
-import { showToast } from "../ui/toast";
 
 export default function InstructorView() {
 	const {
@@ -139,7 +139,11 @@ export default function InstructorView() {
 	const [groups, setGroups] = createSignal<string[][]>();
 	const [includeAbsents, setIncludeAbsents] = createSignal(false);
 
-	const getDate = () => new Date().toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit'});
+	const getDate = () =>
+		new Date().toLocaleDateString("fr-FR", {
+			day: "2-digit",
+			month: "2-digit",
+		});
 
 	const [groupName, setGroupName] = createSignal(getDate());
 
@@ -171,7 +175,6 @@ export default function InstructorView() {
 		}
 		return groups;
 	};
-	
 
 	const exportGroupsToExcel = () => {
 		let fileName = groupName();
@@ -179,8 +182,6 @@ export default function InstructorView() {
 		if (fileName?.endsWith(".xlsx")) {
 			fileName = fileName.slice(0, -5);
 		}
-
-		
 
 		if (fileName) {
 			const workbook = XLSX.utils.book_new();
@@ -191,7 +192,7 @@ export default function InstructorView() {
 				return;
 			}
 
-			const maxStudents = Math.max(...groupList.map(g => g.length));
+			const maxStudents = Math.max(...groupList.map((g) => g.length));
 			const worksheetData = [];
 
 			// Create header row with group numbers
@@ -200,9 +201,7 @@ export default function InstructorView() {
 
 			// Create a row for each student position
 			for (let studentIndex = 0; studentIndex < maxStudents; studentIndex++) {
-				const row = [
-					...groupList.map(group => group[studentIndex] || '')
-				];
+				const row = [...groupList.map((group) => group[studentIndex] || "")];
 				worksheetData.push(row);
 			}
 
@@ -223,7 +222,12 @@ export default function InstructorView() {
 
 	createEffect(() => {
 		if (selectedGroup()) setGroupName(selectedGroup()!.name);
-		if (groupsByList) setGroups(groupsByList.map((group) => group.map((user) => user.name.toUpperCase() + " " + user.first_name)));
+		if (groupsByList)
+			setGroups(
+				groupsByList.map((group) =>
+					group.map((user) => `${user.name.toUpperCase()} ${user.first_name}`),
+				),
+			);
 	});
 
 	// Clean up subscription when the component is destroyed
@@ -418,7 +422,9 @@ export default function InstructorView() {
 										optionTextValue="name"
 										placeholder="Load previous group"
 										itemComponent={(props) => (
-											<SelectItem item={props.item}>{props.item.textValue}</SelectItem>
+											<SelectItem item={props.item}>
+												{props.item.textValue}
+											</SelectItem>
 										)}
 									>
 										<SelectTrigger aria-label="Course" class="w-[180px]">
@@ -451,7 +457,9 @@ export default function InstructorView() {
 										}}
 									/>
 									<div class="grid gap-1.5 leading-none">
-										<Label for="include-absents-input">Inclure les absents</Label>
+										<Label for="include-absents-input">
+											Inclure les absents
+										</Label>
 									</div>
 								</div>
 							</div>
@@ -499,7 +507,11 @@ export default function InstructorView() {
 								</div>
 							</Show>
 							<DialogFooter>
-								<TextField value={groupName()} onChange={(name) => setGroupName(name)} class="flex flex-row items-center">
+								<TextField
+									value={groupName()}
+									onChange={(name) => setGroupName(name)}
+									class="flex flex-row items-center"
+								>
 									<TextFieldLabel>Nom du groupe</TextFieldLabel>
 									<TextFieldInput />
 								</TextField>
@@ -508,10 +520,22 @@ export default function InstructorView() {
 									onClick={() => {
 										if (!selectedCourse() || !groups()) return;
 										setGroupsLoading(true);
-										addList(selectedCourse()!.course_id, groups()!.map((group) => group.map((student) => attendances.find((attendance) => attendance.student_full_name === student)!.student_email)), groupName()).then(() => {
+										addList(
+											selectedCourse()!.course_id,
+											groups()!.map((group) =>
+												group.map(
+													(student) =>
+														attendances.find(
+															(attendance) =>
+																attendance.student_full_name === student,
+														)!.student_email,
+												),
+											),
+											groupName(),
+										).then(() => {
 											refetchGroupsForCourse();
 											setGroupsLoading(false);
-											
+
 											showToast({
 												variant: "success",
 												title: "Groupes sauvegardés",
