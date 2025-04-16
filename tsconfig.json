@@ -1,28 +1,31 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "target": "esnext",
+    "module": "esnext",
+    "newLine": "LF",
+    "allowJs": false,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": false,
+    "isolatedModules": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "allowJs": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
     "strict": true,
-    "noEmit": true,
+    "declaration": true,
+    "sourceMap": true,
     "types": [
       "vinxi/types/client",
-      "jest",
-      "@testing-library/jest-dom",
+      "unplugin-icons/types/solid",
+      "@testing-library/jest-dom"
     ],
-    "isolatedModules": true,
     "paths": {
       "~/*": [
         "./src/*"
       ]
     },
-    "newLine": "LF",
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
   }
 }

@@ -58,11 +58,11 @@ export function getSessionEmail() {
 	const context = useContext(UserContext);
 
 	if (!context || !context.user()) {
-		console.warn(
+		console.trace(
 			"Utilisateur non authentifié ou contexte utilisateur non disponible.",
 		);
-		return null;
+		return "";
 	}
 
-	return context.user()?.email || null;
+	return context.user()?.email || "";
 }

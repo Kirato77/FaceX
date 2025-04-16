@@ -31,7 +31,7 @@ type BadgeProps = ComponentProps<"div"> &
 		round?: boolean;
 	};
 
-const Badge: Component<BadgeProps> = (props) => {
+const Badge: Component<BadgeProps & { as?: any }> = (props) => {
 	const [local, others] = splitProps(props, ["class", "variant", "round"]);
 	return (
 		<div

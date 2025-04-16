@@ -1,25 +1,24 @@
-import { Title } from "@solidjs/meta";
 import { saveAs } from "file-saver";
-import { IoPeople, IoSettingsOutline } from "solid-icons/io";
-import { IoRefreshSharp } from "solid-icons/io";
-import { RiSystemTimer2Line } from "solid-icons/ri";
 import {
 	For,
 	Show,
-	createEffect,
-	createResource,
+	Suspense,
 	createSignal,
 	onCleanup,
+	useTransition,
 } from "solid-js";
 import * as XLSX from "xlsx";
-import { getSessionEmail } from "../components/context";
-import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import { Card, CardFooter, CardTitle } from "../components/ui/card";
-import { Checkbox } from "../components/ui/checkbox";
-import { Separator } from "../components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Card, CardFooter, CardTitle } from "~/components/ui/card";
+import { Checkbox } from "~/components/ui/checkbox";
+import IconGroupFill from "~icons/ri/group-fill";
+import IconRefreshLine from "~icons/ri/refresh-line";
+import IconSettings3Line from "~icons/ri/settings-3-line";
+import IconTimer2Line from "~icons/ri/timer-2-line";
 
+import { Title } from "@solidjs/meta";
 import {
 	Dialog,
 	DialogContent,
@@ -27,8 +26,8 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-} from "../components/ui/dialog";
-import { Label } from "../components/ui/label";
+} from "~/components/ui/dialog";
+import { Label } from "~/components/ui/label";
 import {
 	NumberField,
 	NumberFieldDecrementTrigger,
@@ -36,105 +35,67 @@ import {
 	NumberFieldGroup,
 	NumberFieldIncrementTrigger,
 	NumberFieldInput,
-	NumberFieldLabel,
-} from "../components/ui/number-field";
+} from "~/components/ui/number-field";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "../components/ui/select";
+} from "~/components/ui/select";
+import SpinWheel from "~/components/wheel";
 import {
-	TextField,
-	TextFieldInput,
-	TextFieldLabel,
-} from "../components/ui/text-field";
-import SpinWheel from "../components/wheel";
-import type { Attendance } from "../routes/tracking";
-import {
-	getAttendanceForClassBlock,
-	getClassBlocksByCourseId,
-	getCoursesByInstructorId,
+	type AttendanceForClassBlock,
+	type Block,
+	type Course,
 	getPictureUrl,
-	getStudentStatsForCourse,
 	supabase,
 	updateAttendanceForClassBlock,
-	updateLateTimeInterval,
-} from "../supabase-client";
+} from "~/supabase-client";
+import { AttendancesLoader } from "./attendances-loader";
+import { BlockLoader } from "./block-loader";
+import { useTrackingInstructorContext } from "./context";
+import { CourseLoader } from "./course-loader";
+import { EditCourse } from "./edit-course";
+import { StudentDetails } from "./student-details";
+import { StudentStatsLoader } from "./student-stats-loader";
 
 export default function InstructorView() {
-	const email = getSessionEmail;
-	const [selectedCourseId, setSelectedCourseId] = createSignal<number>();
-	const [lateTimeInterval, setLateTimeInterval] = createSignal<number[]>();
-	const [selectedBlockId, setSelectedBlockId] = createSignal<number>();
-	const [openEditCourseDialog, setOpenEditCourseDialog] = createSignal(false);
-	const [loading, setLoading] = createSignal(false);
-
-	const [courses, { refetch: refetchCourses }] = createResource(
-		email,
-		async (email) => {
-			if (!email) return null;
-			return getCoursesByInstructorId(email);
-		},
-		{ initialValue: [] },
-	);
-	const [blocks] = createResource(
-		selectedCourseId,
-		async (selectedCourseId) => {
-			return getClassBlocksByCourseId(selectedCourseId);
-		},
-		{ initialValue: [] },
-	);
-	const [attendances, { refetch }] = createResource(
+	const {
+		setOpenEditCourseDialog,
+		refetchAttendances,
 		selectedBlockId,
-		async (blockId) => {
-			if (!blockId) return null;
-			return getAttendanceForClassBlock(blockId);
-		},
-	);
-
-	const presentAttendances = () => {
-		return attendances().filter(
-			(a: { attendance_status: string }) =>
-				a.attendance_status === "Present" || a.attendance_status === "Late",
-		);
-	};
-
-	createEffect(() => {
-		const coursesList = courses();
-		if (coursesList.length > 0 && !selectedCourseId()) {
-			setSelectedCourseId(coursesList[0].course_id); // Premier cours par défaut
-			setLateTimeInterval(coursesList[0].late_time_interval);
-		}
-	});
-	createEffect(() => {
-		const blocksList = blocks();
-		if (blocksList.length > 0 && !selectedBlockId()) {
-			setSelectedBlockId(blocksList[0].block_id); // Premier block par défaut
-		}
-	});
-
-	const [open, setOpen] = createSignal(false);
-	const [selectedStudent, setSelectedStudent] = createSignal<Attendance | null>(
-		null,
-	);
-	const [studentStats] = createResource(
-		() => [selectedStudent(), selectedCourseId()],
-		async ([selectedStudent, selectedCourseId]) => {
-			if (!selectedStudent || !selectedCourseId) return null;
-			return getStudentStatsForCourse(
-				selectedCourseId,
-				selectedStudent.student_email,
-			);
-		},
-	);
+		courses,
+		setSelectedCourseId,
+		blocks,
+		setSelectedBlockId,
+		selectedCourse,
+		attendances,
+		presentAttendances,
+		selectedBlock,
+		setOpenStudentDetailsDialog,
+		setAttendances,
+	} = useTrackingInstructorContext();
 
 	// Handle real-time inserts, updates and deletes
 	const handleAttendanceChange = (payload: any) => {
-		// console.log("Change received!", payload);
+		if (payload.eventType === "DELETE") {
+			setAttendances((state) => {
+				return state.map((attendance) => {
+					if (attendance.attendance_id === payload.old.attendance_id) {
+						return {
+							...attendance,
+							attendance_status: "Absent",
+						};
+					}
+					return attendance;
+				});
+			});
+			return;
+		}
+
 		if (payload.new.block_id === selectedBlockId()) {
-			refetch(); // Re-fetch the attendances data whenever a change is detected related to the selected class block
+			refetchAttendances(); // Re-fetch the attendances data whenever a change is detected related to the selected class block
 		}
 	};
 
@@ -168,7 +129,7 @@ export default function InstructorView() {
 
 	const createGroups = (
 		peoplePerGroup: number,
-		presentStudents: Attendance[],
+		presentStudents: AttendanceForClassBlock[],
 	) => {
 		const groups: string[][] = [];
 		let start = 0;
@@ -193,16 +154,17 @@ export default function InstructorView() {
 	};
 
 	const exportGroupsToExcel = () => {
-		const fileName = prompt(
-			"Entrez le nom du fichier (sans extension) :",
-			"groupes",
-		);
+		let fileName = prompt("Entrez le nom du fichier :", "groupes");
+
+		if (fileName?.endsWith(".xlsx")) {
+			fileName = fileName.slice(0, -5);
+		}
 
 		if (fileName) {
 			const workbook = XLSX.utils.book_new();
 			const groupList = groups();
 
-			if (groupList.length === 0) {
+			if (!groupList || groupList.length === 0) {
 				console.error("Il n'y a pas de groupes disponibles !");
 				return;
 			}
@@ -241,19 +203,22 @@ export default function InstructorView() {
 
 	return (
 		<div class="flex flex-col p-5">
+			<Suspense>
+				<CourseLoader />
+				<BlockLoader />
+				<AttendancesLoader />
+				<StudentStatsLoader />
+			</Suspense>
+
 			<Title>FaceX - Tracking</Title>
 			<div class="flex flex-wrap justify-between gap-2">
 				<div class="flex flex-wrap gap-2">
 					<Select
-						options={courses()}
-						value={courses().find(
-							(course) => course.course_id === selectedCourseId(),
-						)}
+						options={courses}
+						value={selectedCourse()}
 						onChange={(course) => {
 							if (course) {
 								setSelectedCourseId(course.course_id);
-								setLateTimeInterval(course.late_time_interval);
-								setSelectedBlockId(undefined);
 							}
 						}}
 						optionValue="course_id"
@@ -264,20 +229,17 @@ export default function InstructorView() {
 						)}
 					>
 						<SelectTrigger aria-label="Course" class="w-[180px]">
-							<SelectValue<string>>
+							<SelectValue<Course>>
 								{(state) => state.selectedOption()?.course_name}
 							</SelectValue>
 						</SelectTrigger>
 						<SelectContent />
 					</Select>
 					<Select
-						options={blocks()}
-						value={blocks().find(
-							(block) => block.block_id === selectedBlockId(),
-						)}
+						options={blocks}
+						value={blocks.find((block) => block.block_id === selectedBlockId())}
 						onChange={(block) => {
 							if (block) {
-								// Add a null check before accessing block properties
 								setSelectedBlockId(block.block_id);
 							}
 						}}
@@ -289,110 +251,21 @@ export default function InstructorView() {
 						)}
 					>
 						<SelectTrigger aria-label="Block" class="w-[180px]">
-							<SelectValue<string>>
+							<SelectValue<Block>>
 								{(state) => state.selectedOption()?.block_name}
 							</SelectValue>
 						</SelectTrigger>
 						<SelectContent />
 					</Select>
-					<Button onClick={setOpenEditCourseDialog} class="gap-1">
-						<IoSettingsOutline class="h-5 w-5" />
+					<Button onClick={() => setOpenEditCourseDialog(true)} class="gap-1">
+						<IconSettings3Line class="h-5 w-5" />
 						Edit course
 					</Button>
-					<Dialog
-						open={openEditCourseDialog()}
-						onOpenChange={setOpenEditCourseDialog}
-					>
-						<DialogContent>
-							<DialogHeader>
-								<DialogTitle class="flex flex-row gap-2 items-center">
-									Edit Course
-									<Button
-										variant="ghost"
-										class="flex h-5 w-5 p-3"
-										title="Refresh"
-										onClick={() => {
-											refetchCourses();
-										}}
-									>
-										<IoRefreshSharp class="h-5 w-5" />
-									</Button>
-								</DialogTitle>
-								<DialogDescription>
-									Changer les paramètres du cours
-								</DialogDescription>
-							</DialogHeader>
-							<TextField class="flex flex-row items-center">
-								<TextFieldLabel>Nom</TextFieldLabel>
-								<TextFieldInput
-									value={
-										courses().find(
-											(course) => course.course_id === selectedCourseId(),
-										).course_name
-									}
-									disabled
-								/>
-							</TextField>
-							<NumberField
-								class="flex flex-row items-center gap-2"
-								value={lateTimeInterval()[0]}
-								onRawValueChange={(value) =>
-									setLateTimeInterval((prev) => [value, prev[1]])
-								}
-								minValue={0}
-								maxValue={lateTimeInterval()[1]}
-							>
-								<NumberFieldLabel>Début du retard</NumberFieldLabel>
-								<NumberFieldGroup>
-									<NumberFieldInput />
-									<NumberFieldIncrementTrigger />
-									<NumberFieldDecrementTrigger />
-								</NumberFieldGroup>
-								<span>min</span>
-							</NumberField>
-							<NumberField
-								class="flex flex-row items-center gap-2"
-								value={lateTimeInterval()[1]}
-								onRawValueChange={(value) =>
-									setLateTimeInterval(
-										setLateTimeInterval((prev) => [prev[0], value]),
-									)
-								}
-								minValue={lateTimeInterval()[0]}
-								maxValue={600}
-							>
-								<NumberFieldLabel>Fin du retard</NumberFieldLabel>
-								<NumberFieldGroup>
-									<NumberFieldInput />
-									<NumberFieldIncrementTrigger />
-									<NumberFieldDecrementTrigger />
-								</NumberFieldGroup>
-								<span>min</span>
-							</NumberField>
-							<DialogFooter>
-								<Button
-									disabled={loading()}
-									onClick={() => {
-										setLoading(true);
-										updateLateTimeInterval(
-											selectedCourseId(),
-											lateTimeInterval(),
-										).then(() => {
-											refetchCourses();
-											setLoading(false);
-										});
-									}}
-								>
-									Sauvegarder
-								</Button>
-							</DialogFooter>
-						</DialogContent>
-					</Dialog>
 				</div>
 				<div class="flex flex-wrap gap-2">
 					<Button onClick={setOpenWheelDialog} class="gap-1">
-						<RiSystemTimer2Line class="h-5 w-5" />
-						Turn a wheel
+						<IconTimer2Line class="h-5 w-5" />
+						Spin wheel
 					</Button>
 					<Dialog open={openWheelDialog()} onOpenChange={setOpenWheelDialog}>
 						<DialogContent>
@@ -404,11 +277,13 @@ export default function InstructorView() {
 										class="flex h-5 w-5 p-3"
 										title="Refresh"
 										onClick={() => {
-											setShowWheel(false);
-											setShowWheel(true);
+											if (attendances.length > 0) {
+												setShowWheel(false);
+												setShowWheel(true);
+											}
 										}}
 									>
-										<IoRefreshSharp class="h-5 w-5" />
+										<IconRefreshLine class="h-5 w-5 text-white" />
 									</Button>
 								</DialogTitle>
 								<DialogDescription>
@@ -416,12 +291,12 @@ export default function InstructorView() {
 								</DialogDescription>
 							</DialogHeader>
 							<Show when={showWheel()} keyed>
-								<SpinWheel attendances={attendances()} />
+								<SpinWheel attendances={attendances} />
 							</Show>
 						</DialogContent>
 					</Dialog>
 					<Button onClick={() => setOpenDialog(true)} class="gap-1">
-						<IoPeople class="h-5 w-5" />
+						<IconGroupFill class="h-5 w-5" />
 						Compose groups
 					</Button>
 					<Dialog open={openDialog()} onOpenChange={setOpenDialog}>
@@ -445,8 +320,8 @@ export default function InstructorView() {
 													createGroups(
 														value,
 														includeAbsents()
-															? attendances()
-															: attendances().filter(
+															? attendances
+															: attendances.filter(
 																	(a: { attendance_status: string }) =>
 																		a.attendance_status === "Present" ||
 																		a.attendance_status === "Late",
@@ -478,8 +353,8 @@ export default function InstructorView() {
 											title="Refresh"
 											onClick={() => {
 												const filteredStudents = includeAbsents()
-													? attendances()
-													: attendances().filter(
+													? attendances
+													: attendances.filter(
 															(a: { attendance_status: string }) =>
 																a.attendance_status === "Present" ||
 																a.attendance_status === "Late",
@@ -493,7 +368,7 @@ export default function InstructorView() {
 												setOpenDialog(true);
 											}}
 										>
-											<IoRefreshSharp class="h-5 w-5" />
+											<IconRefreshLine class="h-5 w-5" />
 										</Button>
 									</div>
 								</div>
@@ -508,8 +383,8 @@ export default function InstructorView() {
 												createGroups(
 													peoplePerGroup(),
 													value === true
-														? attendances()
-														: attendances().filter(
+														? attendances
+														: attendances.filter(
 																(a: { attendance_status: string }) =>
 																	a.attendance_status === "Present" ||
 																	a.attendance_status === "Late",
@@ -535,7 +410,7 @@ export default function InstructorView() {
 												<div class="flex flex-wrap gap-2">
 													<For each={group}>
 														{(studentName) => {
-															const student = attendances().find(
+															const student = attendances.find(
 																(a: { student_full_name: string }) =>
 																	a.student_full_name === studentName,
 															);
@@ -552,11 +427,9 @@ export default function InstructorView() {
 																		<AvatarFallback>Photo</AvatarFallback>
 																	</Avatar>
 																	<div class="text-base text-center truncate">
-																		{studentName
-																			.split(" ")
-																			.map((name, index) => (
-																				<div key={index}>{name}</div>
-																			))}
+																		<For each={studentName.split(" ")}>
+																			{(name) => <div>{name}</div>}
+																		</For>
 																	</div>
 																</div>
 															);
@@ -583,7 +456,7 @@ export default function InstructorView() {
 			</div>
 			<div class="flex justify-center m-2">
 				<Show
-					when={attendances() && Object.keys(attendances()).length !== 0}
+					when={attendances && attendances.length !== 0}
 					fallback={"No Data"}
 				>
 					<div class="flex flex-col">
@@ -600,44 +473,23 @@ export default function InstructorView() {
 									>
 										{presentAttendances().length}
 									</span>
-									<span class="text-gray-500"> / {attendances().length}</span>
+									<span class="text-gray-500"> / {attendances.length}</span>
 								</span>
 							</span>
 						</div>
 						<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 m-5 gap-5 max-w-screen-2xl">
-							<For each={attendances()}>
+							<For each={attendances}>
 								{(attendance) => (
 									<Card
-										class="flex flex-col justify-center items-center space-y-3 p-2 min-w-fit"
+										as={Button}
+										class="flex flex-col justify-center items-center space-y-3 p-2 min-w-fit cursor-pointer"
 										tabindex="0"
 										aria-label={attendance.student_full_name}
-										onKeyDown={(e) => {
-											if (e.key === "+" || e.key === "p") {
-												setSelectedStudent(attendance);
-												setOpen(true);
-												e.preventDefault();
-											}
-											if (e.key === "Enter" || e.key === " ") {
-												updateAttendanceForClassBlock(
-													attendance.student_email,
-													selectedBlockId(),
-													attendance.attendance_status === "Present" ||
-														attendance.attendance_status === "Late"
-														? "Absent"
-														: "Present",
-													"manual",
-												);
-												e.preventDefault();
-											}
+										onClick={(e) => {
+											setOpenStudentDetailsDialog(attendance);
 										}}
 									>
-										<Avatar
-											class="w-28 h-28 cursor-pointer"
-											onClick={() => {
-												setSelectedStudent(attendance);
-												setOpen(true);
-											}}
-										>
+										<Avatar class="w-28 h-28 cursor-pointer">
 											<AvatarImage
 												src={getPictureUrl(
 													`students/${attendance.matricule}.jpg`,
@@ -649,17 +501,23 @@ export default function InstructorView() {
 										<CardTitle>{attendance.student_full_name}</CardTitle>
 										<CardFooter>
 											<Badge
-												onClick={() =>
-													updateAttendanceForClassBlock(
-														attendance.student_email,
-														selectedBlockId(),
-														attendance.attendance_status === "Present" ||
-															attendance.attendance_status === "Late"
-															? "Absent"
-															: "Present",
-														"manual",
-													)
-												}
+												as={Button}
+												onClick={(e) => {
+													if (selectedBlock()?.block_id) {
+														updateAttendanceForClassBlock(
+															attendance.student_email,
+															selectedBlock()!.block_id,
+															attendance.attendance_status === "Present" ||
+																attendance.attendance_status === "Late"
+																? "Absent"
+																: "Present",
+															"manual",
+														);
+
+														e.preventDefault();
+														e.stopPropagation();
+													}
+												}}
 												class={`${attendance.attendance_status === "Present" ? "bg-green-600 text-white hover:bg-green-800" : attendance.attendance_status === "Late" ? "bg-green-600 text-white hover:bg-green-800 border-4 border-yellow-400" : ""} {} cursor-pointer`}
 												variant={
 													attendance.attendance_status === "Present" ||
@@ -680,49 +538,9 @@ export default function InstructorView() {
 					</div>
 				</Show>
 			</div>
-			<Dialog open={open()} onOpenChange={setOpen}>
-				<DialogContent>
-					<div class="flex items-start space-x-4">
-						<Avatar class="w-32 h-32">
-							<AvatarImage
-								src={getPictureUrl(
-									`students/${selectedStudent()?.matricule}.jpg`,
-								)}
-								class="object-cover w-32 h-32"
-							/>
-							<AvatarFallback>Photo</AvatarFallback>
-						</Avatar>
-						<div class="flex flex-col justify-center">
-							<DialogHeader>
-								<DialogTitle>
-									{selectedStudent()?.student_full_name}
-								</DialogTitle>
-								<DialogDescription class="flex flex-col">
-									<span>Matricule : {selectedStudent()?.matricule}</span>
-									<span>Statut : {selectedStudent()?.attendance_status}</span>
-									<Separator class="my-2" />
-									<Show
-										when={
-											!studentStats.loading &&
-											studentStats() &&
-											studentStats()[0]
-										}
-										fallback={"loading..."}
-									>
-										<span>
-											Total présences : {studentStats()[0].present_count}
-										</span>
-										<span>Total retards : {studentStats()[0].late_count}</span>
-										<span>
-											Total absences : {studentStats()[0].absent_count}
-										</span>
-									</Show>
-								</DialogDescription>
-							</DialogHeader>
-						</div>
-					</div>
-				</DialogContent>
-			</Dialog>
+
+			<EditCourse />
+			<StudentDetails />
 		</div>
 	);
 }
