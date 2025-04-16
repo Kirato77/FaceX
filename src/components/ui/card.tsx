@@ -3,7 +3,7 @@ import { splitProps } from "solid-js";
 
 import { cn } from "~/lib/utils";
 
-const Card: Component<ComponentProps<"div">> = (props) => {
+const Card: Component<ComponentProps<"div"> & { as?: any }> = (props) => {
 	const [local, others] = splitProps(props, ["class"]);
 	return (
 		<div
