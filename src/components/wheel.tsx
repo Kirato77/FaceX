@@ -60,7 +60,6 @@ const SpinWheel = (props: SpinWheelProps) => {
 	});
 
 	const handleWinnerChange = (e: { currentIndex: number }) => {
-		console.log(e);
 		setWinner(wheel().items[e.currentIndex].label);
 	};
 

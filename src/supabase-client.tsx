@@ -21,6 +21,8 @@ export interface User {
 	email: string;
 	role: string;
 	matricule: string;
+	name: string;
+	first_name: string;
 }
 
 export interface Attendance {
@@ -42,6 +44,11 @@ export interface AttendanceForClassBlock {
 	attendance_status: string;
 	matricule: string;
 	attendance_id: number;
+}
+
+export interface Group {
+	id: number;
+	name: string;
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -198,4 +205,46 @@ export function getPictureUrl(picturePath: string) {
 		.getPublicUrl(picturePath);
 
 	return data.publicUrl;
+}
+
+export async function getGroupsByCourse(course_id: number): Promise<Group[]> {
+	const { data, error } = await supabase.rpc("get_lists_by_course", {
+		course_id: course_id,
+	});
+	if (error) {
+		throw new Error(
+			`Error fetching data for get_lists_by_course: ${error.message}`,
+		);
+	}
+	return data;
+}
+
+export async function getGroupsByList(group_id: number): Promise<User[][]> {
+	const { data, error } = await supabase.rpc("get_groups_by_list", {
+		list_id: group_id ,
+	});
+	if (error) {
+		throw new Error(
+			`Error fetching data for get_groups_by_list: ${error.message}`,
+		);
+	}
+	return data;
+}
+
+export async function addList(
+	course_id: number,
+	student_groups: string[][],
+	list_name: string,
+) {
+	const { data, error } = await supabase.rpc("add_list", {
+		course_id: course_id,
+		student_groups: student_groups,
+		list_name: list_name,
+	});
+	if (error) {
+		throw new Error(
+			`Error fetching data for add_list: ${error.message}`,
+		);
+	}
+	return data;
 }

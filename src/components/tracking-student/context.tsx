@@ -49,8 +49,6 @@ export function useTrackingStudentContext() {
 export function TrackingStudentProvider(props: ParentProps) {
 	const { user } = useUserContext();
 
-	console.log(user());
-
 	const [studentAttendances, setStudentAttendances] = createStore<Attendance[]>(
 		[],
 	);
@@ -70,7 +68,6 @@ export function TrackingStudentProvider(props: ParentProps) {
 		<TrackingStudentContext.Provider
 			value={{
 				studentEmail: () => {
-					console.log("AAAAAAAAAA", user());
 					return user()?.email || "";
 				},
 				studentAttendances,

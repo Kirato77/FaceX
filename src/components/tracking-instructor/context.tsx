@@ -9,10 +9,9 @@ import {
 } from "solid-js";
 import {
 	type SetStoreFunction,
-	StoreSetter,
 	createStore,
 } from "solid-js/store";
-import type { AttendanceForClassBlock, Block, Course } from "~/supabase-client";
+import type { AttendanceForClassBlock, Block, Course, Group, User } from "~/supabase-client";
 
 export interface TrackingInstructorContextValue {
 	openEditCourseDialog: Accessor<boolean>;
@@ -42,6 +41,14 @@ export interface TrackingInstructorContextValue {
 	setStudentStats: Setter<any>;
 	onRefetchStudentStats: (callback: () => void) => void;
 	selectedStudent: Accessor<AttendanceForClassBlock | undefined>;
+	groupsForCourse: Group[];
+	setGroupsForCourse: SetStoreFunction<Group[]>;
+	selectedGroup: Accessor<Group | undefined>;
+	setSelectedGroup: (group: Group | undefined) => void;
+	groupsByList: User[][];
+	setGroupsByList: SetStoreFunction<User[][]>;
+	onRefetchGroupsForCourse: (callback: () => void) => void;
+	refetchGroupsForCourse: () => void;
 }
 
 export const TrackingInstructorContext =
@@ -67,18 +74,22 @@ export function TrackingInstructorProvider(props: ParentProps) {
 	const [_selectedBlockId, setSelectedBlockId] = createSignal<number>();
 	const [selectedStudent, setSelectedStudent] =
 		createSignal<AttendanceForClassBlock>();
-
+	const [selectedGroup, setSelectedGroup] = createSignal<Group>();
 	const [courses, setCourses] = createStore<Course[]>([]);
 	const [blocks, setBlocks] = createStore<Block[]>([]);
 	const [attendances, setAttendances] = createStore<AttendanceForClassBlock[]>(
 		[],
 	);
+	const [groupsForCourse, setGroupsForCourse] = createStore<Group[]>([]);
+	const [groupsByList, setGroupsByList] = createStore<User[][]>([]);
 	const [studentStats, setStudentStats] = createSignal<any>(null);
 
 	const [getOnRefetchCourses, onRefetchCourses] = createSignal<() => void>();
 	const [getOnRefetchAttendances, onRefetchAttendances] =
 		createSignal<() => void>();
 	const [getOnRefetchStudentStats, onRefetchStudentStats] =
+		createSignal<() => void>();
+	const [getOnRefetchGroupsForCourse, onRefetchGroupsForCourse] =
 		createSignal<() => void>();
 
 	const selectedCourseId = createMemo(() => {
@@ -131,6 +142,7 @@ export function TrackingInstructorProvider(props: ParentProps) {
 				onRefetchAttendances: (cb) => onRefetchAttendances(() => cb),
 				onRefetchCourses: (cb) => onRefetchCourses(() => cb),
 				onRefetchStudentStats: (cb) => onRefetchStudentStats(() => cb),
+				onRefetchGroupsForCourse: (cb) => onRefetchGroupsForCourse(() => cb),
 				setCourses,
 				setBlocks,
 				setAttendances,
@@ -149,6 +161,13 @@ export function TrackingInstructorProvider(props: ParentProps) {
 					getOnRefetchStudentStats()?.();
 					setOpenStudentDetailsDialog(true);
 				},
+				groupsForCourse,
+				setGroupsForCourse,
+				selectedGroup,
+				setSelectedGroup,
+				groupsByList,
+				setGroupsByList,
+				refetchGroupsForCourse: () => getOnRefetchGroupsForCourse()?.(),
 			}}
 		>
 			{props.children}

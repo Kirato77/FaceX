@@ -3,6 +3,7 @@ import {
 	For,
 	Show,
 	Suspense,
+	createEffect,
 	createSignal,
 	onCleanup,
 	useTransition,
@@ -45,10 +46,12 @@ import {
 } from "~/components/ui/select";
 import SpinWheel from "~/components/wheel";
 import {
+	addList,
 	type AttendanceForClassBlock,
 	type Block,
 	type Course,
 	getPictureUrl,
+	Group,
 	supabase,
 	updateAttendanceForClassBlock,
 } from "~/supabase-client";
@@ -59,6 +62,10 @@ import { CourseLoader } from "./course-loader";
 import { EditCourse } from "./edit-course";
 import { StudentDetails } from "./student-details";
 import { StudentStatsLoader } from "./student-stats-loader";
+import { GroupsForCourseLoader } from "./groups-for-course-loader";
+import { GroupsByListLoader } from "./groups-by-list-loader";
+import { TextField, TextFieldInput, TextFieldLabel } from "../ui/text-field";
+import { showToast } from "../ui/toast";
 
 export default function InstructorView() {
 	const {
@@ -75,6 +82,11 @@ export default function InstructorView() {
 		selectedBlock,
 		setOpenStudentDetailsDialog,
 		setAttendances,
+		groupsForCourse,
+		setSelectedGroup,
+		groupsByList,
+		selectedGroup,
+		refetchGroupsForCourse,
 	} = useTrackingInstructorContext();
 
 	// Handle real-time inserts, updates and deletes
@@ -127,10 +139,17 @@ export default function InstructorView() {
 	const [groups, setGroups] = createSignal<string[][]>();
 	const [includeAbsents, setIncludeAbsents] = createSignal(false);
 
+	const getDate = () => new Date().toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit'});
+
+	const [groupName, setGroupName] = createSignal(getDate());
+
 	const createGroups = (
 		peoplePerGroup: number,
 		presentStudents: AttendanceForClassBlock[],
 	) => {
+		setSelectedGroup(undefined);
+		setGroupName(getDate());
+
 		const groups: string[][] = [];
 		let start = 0;
 		const presentStudentNames = presentStudents.map(
@@ -152,13 +171,16 @@ export default function InstructorView() {
 		}
 		return groups;
 	};
+	
 
 	const exportGroupsToExcel = () => {
-		let fileName = prompt("Entrez le nom du fichier :", "groupes");
+		let fileName = groupName();
 
 		if (fileName?.endsWith(".xlsx")) {
 			fileName = fileName.slice(0, -5);
 		}
+
+		
 
 		if (fileName) {
 			const workbook = XLSX.utils.book_new();
@@ -169,17 +191,20 @@ export default function InstructorView() {
 				return;
 			}
 
+			const maxStudents = Math.max(...groupList.map(g => g.length));
 			const worksheetData = [];
-			const header = [
-				"Groupe",
-				...groupList[0].map((_, i) => `Étudiant ${i + 1}`),
-			];
+
+			// Create header row with group numbers
+			const header = [...groupList.map((_, i) => `Groupe ${i + 1}`)];
 			worksheetData.push(header);
 
-			groupList.forEach((group, index) => {
-				const row = [index + 1, ...group];
+			// Create a row for each student position
+			for (let studentIndex = 0; studentIndex < maxStudents; studentIndex++) {
+				const row = [
+					...groupList.map(group => group[studentIndex] || '')
+				];
 				worksheetData.push(row);
-			});
+			}
 
 			const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 			XLSX.utils.book_append_sheet(workbook, worksheet, "Groupe");
@@ -196,10 +221,17 @@ export default function InstructorView() {
 		}
 	};
 
+	createEffect(() => {
+		if (selectedGroup()) setGroupName(selectedGroup()!.name);
+		if (groupsByList) setGroups(groupsByList.map((group) => group.map((user) => user.name.toUpperCase() + " " + user.first_name)));
+	});
+
 	// Clean up subscription when the component is destroyed
 	onCleanup(() => {
 		attendanceChannel.unsubscribe();
 	});
+
+	const [groupsLoading, setGroupsLoading] = createSignal(false);
 
 	return (
 		<div class="flex flex-col p-5">
@@ -208,6 +240,8 @@ export default function InstructorView() {
 				<BlockLoader />
 				<AttendancesLoader />
 				<StudentStatsLoader />
+				<GroupsForCourseLoader />
+				<GroupsByListLoader />
 			</Suspense>
 
 			<Title>FaceX - Tracking</Title>
@@ -371,6 +405,29 @@ export default function InstructorView() {
 											<IconRefreshLine class="h-5 w-5" />
 										</Button>
 									</div>
+
+									<Select
+										options={groupsForCourse}
+										value={selectedGroup() ?? null}
+										onChange={(group) => {
+											if (group) {
+												setSelectedGroup(group);
+											}
+										}}
+										optionValue="id"
+										optionTextValue="name"
+										placeholder="Load previous group"
+										itemComponent={(props) => (
+											<SelectItem item={props.item}>{props.item.textValue}</SelectItem>
+										)}
+									>
+										<SelectTrigger aria-label="Course" class="w-[180px]">
+											<SelectValue<Group>>
+												{(state) => state.selectedOption()?.name}
+											</SelectValue>
+										</SelectTrigger>
+										<SelectContent />
+									</Select>
 								</div>
 
 								<div class="flex items-start space-x-2">
@@ -394,7 +451,7 @@ export default function InstructorView() {
 										}}
 									/>
 									<div class="grid gap-1.5 leading-none">
-										<Label for="include-absents">Inclure les absents</Label>
+										<Label for="include-absents-input">Inclure les absents</Label>
 									</div>
 								</div>
 							</div>
@@ -442,6 +499,32 @@ export default function InstructorView() {
 								</div>
 							</Show>
 							<DialogFooter>
+								<TextField value={groupName()} onChange={(name) => setGroupName(name)} class="flex flex-row items-center">
+									<TextFieldLabel>Nom du groupe</TextFieldLabel>
+									<TextFieldInput />
+								</TextField>
+								<Button
+									variant="outline"
+									onClick={() => {
+										if (!selectedCourse() || !groups()) return;
+										setGroupsLoading(true);
+										addList(selectedCourse()!.course_id, groups()!.map((group) => group.map((student) => attendances.find((attendance) => attendance.student_full_name === student)!.student_email)), groupName()).then(() => {
+											refetchGroupsForCourse();
+											setGroupsLoading(false);
+											
+											showToast({
+												variant: "success",
+												title: "Groupes sauvegardés",
+												description:
+													"Les groupes ont été sauvegardés avec succès.",
+											});
+										});
+									}}
+									disabled={groupsLoading()}
+									class="bg-black text-white font-bold rounded-lg hover:bg-gray-900"
+								>
+									Sauvegarder les groupes
+								</Button>
 								<Button
 									variant="outline"
 									onClick={exportGroupsToExcel}
