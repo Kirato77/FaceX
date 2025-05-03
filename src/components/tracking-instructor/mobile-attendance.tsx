@@ -27,10 +27,10 @@ export function MobileAttendance(props: MobileAttendanceProps) {
 	const stopCamera = () => {
 		const mediaStream = stream();
 		if (mediaStream) {
-			mediaStream.getTracks().forEach((track) => {
+			for (const track of mediaStream.getTracks()) {
 				track.stop();
 				mediaStream.removeTrack(track);
-			});
+			}
 			setStream(null);
 			setIsCameraActive(false);
 
