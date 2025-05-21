@@ -658,6 +658,7 @@ export default function InstructorView() {
 			<MobileAttendance
 				isOpen={openMobileAttendance()}
 				onClose={() => setOpenMobileAttendance(false)}
+				blockId={selectedBlockId()!.toString()}
 			/>
 		</div>
 	);
