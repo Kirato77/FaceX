@@ -367,10 +367,10 @@ export default function InstructorView() {
 														includeAbsents()
 															? attendances
 															: attendances.filter(
-																(a: { attendance_status: string }) =>
-																	a.attendance_status === "Present" ||
-																	a.attendance_status === "Late",
-															),
+																	(a: { attendance_status: string }) =>
+																		a.attendance_status === "Present" ||
+																		a.attendance_status === "Late",
+																),
 													),
 												);
 											}}
@@ -400,10 +400,10 @@ export default function InstructorView() {
 												const filteredStudents = includeAbsents()
 													? attendances
 													: attendances.filter(
-														(a: { attendance_status: string }) =>
-															a.attendance_status === "Present" ||
-															a.attendance_status === "Late",
-													);
+															(a: { attendance_status: string }) =>
+																a.attendance_status === "Present" ||
+																a.attendance_status === "Late",
+														);
 
 												const newGroups = createGroups(
 													peoplePerGroup(),
@@ -455,10 +455,10 @@ export default function InstructorView() {
 													value === true
 														? attendances
 														: attendances.filter(
-															(a: { attendance_status: string }) =>
-																a.attendance_status === "Present" ||
-																a.attendance_status === "Late",
-														),
+																(a: { attendance_status: string }) =>
+																	a.attendance_status === "Present" ||
+																	a.attendance_status === "Late",
+															),
 												),
 											);
 										}}
@@ -635,7 +635,7 @@ export default function InstructorView() {
 												class={`${attendance.attendance_status === "Present" ? "bg-green-600 text-white hover:bg-green-800" : attendance.attendance_status === "Late" ? "bg-green-600 text-white hover:bg-green-800 border-4 border-yellow-400" : ""} {} cursor-pointer`}
 												variant={
 													attendance.attendance_status === "Present" ||
-														attendance.attendance_status === "Late"
+													attendance.attendance_status === "Late"
 														? "default"
 														: "destructive"
 												}
