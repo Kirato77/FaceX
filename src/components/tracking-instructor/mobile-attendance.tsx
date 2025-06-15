@@ -116,7 +116,8 @@ export function MobileAttendance(props: MobileAttendanceProps) {
 			console.log("Attempting to connect to WebSocket server...");
 
 			// Établir la connexion WebSocket avec le token
-			const socket = new WebSocket(`ws://localhost:8765?token=${token}`);
+			const wsUrl = import.meta.env.VITE_WS_URL;
+			const socket = new WebSocket(`${wsUrl}?token=${token}`);
 
 			// Gestionnaire d'événements pour les erreurs de connexion
 			socket.onerror = (error) => {
