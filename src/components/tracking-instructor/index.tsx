@@ -14,6 +14,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardFooter, CardTitle } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
+import IconCameraLine from "~icons/ri/camera-line";
 import IconGroupFill from "~icons/ri/group-fill";
 import IconRefreshLine from "~icons/ri/refresh-line";
 import IconSettings3Line from "~icons/ri/settings-3-line";
@@ -64,6 +65,7 @@ import { CourseLoader } from "./course-loader";
 import { EditCourse } from "./edit-course";
 import { GroupsByListLoader } from "./groups-by-list-loader";
 import { GroupsForCourseLoader } from "./groups-for-course-loader";
+import { MobileAttendance } from "./mobile-attendance";
 import { StudentDetails } from "./student-details";
 import { StudentStatsLoader } from "./student-stats-loader";
 
@@ -236,6 +238,7 @@ export default function InstructorView() {
 	});
 
 	const [groupsLoading, setGroupsLoading] = createSignal(false);
+	const [openMobileAttendance, setOpenMobileAttendance] = createSignal(false);
 
 	return (
 		<div class="flex flex-col p-5">
@@ -301,7 +304,11 @@ export default function InstructorView() {
 					</Button>
 				</div>
 				<div class="flex flex-wrap gap-2">
-					<Button onClick={setOpenWheelDialog} class="gap-1">
+					<Button onClick={() => setOpenMobileAttendance(true)} class="gap-1">
+						<IconCameraLine class="h-5 w-5" />
+						Take Attendance
+					</Button>
+					<Button onClick={() => setOpenWheelDialog(true)} class="gap-1">
 						<IconTimer2Line class="h-5 w-5" />
 						Spin wheel
 					</Button>
@@ -648,6 +655,11 @@ export default function InstructorView() {
 
 			<EditCourse />
 			<StudentDetails />
+			<MobileAttendance
+				isOpen={openMobileAttendance()}
+				onClose={() => setOpenMobileAttendance(false)}
+				blockId={selectedBlockId()!.toString()}
+			/>
 		</div>
 	);
 }
