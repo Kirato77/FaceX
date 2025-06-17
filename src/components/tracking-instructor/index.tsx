@@ -51,6 +51,7 @@ import {
 	type Block,
 	type Course,
 	type Group,
+	type User,
 	addList,
 	getPictureUrl,
 	supabase,
@@ -58,6 +59,7 @@ import {
 } from "~/supabase-client";
 import { TextField, TextFieldInput, TextFieldLabel } from "../ui/text-field";
 import { showToast } from "../ui/toast";
+import { AllHistoricalGroupsLoader } from "./all-historical-groups-loader";
 import { AttendancesLoader } from "./attendances-loader";
 import { BlockLoader } from "./block-loader";
 import { useTrackingInstructorContext } from "./context";
@@ -89,6 +91,7 @@ export default function InstructorView() {
 		groupsByList,
 		selectedGroup,
 		refetchGroupsForCourse,
+		allHistoricalGroups,
 	} = useTrackingInstructorContext();
 
 	// Handle real-time inserts, updates and deletes
@@ -140,6 +143,7 @@ export default function InstructorView() {
 	const [peoplePerGroup, setPeoplePerGroup] = createSignal(0);
 	const [groups, setGroups] = createSignal<string[][]>();
 	const [includeAbsents, setIncludeAbsents] = createSignal(false);
+	const [avoidPreviousGroups, setAvoidPreviousGroups] = createSignal(false);
 
 	const getDate = () =>
 		new Date().toLocaleDateString("fr-FR", {
@@ -162,19 +166,93 @@ export default function InstructorView() {
 			(student) => student.student_full_name,
 		);
 
-		for (let i = 0; i < presentStudentNames.length - 1; i++) {
-			const j =
-				Math.floor(Math.random() * (presentStudentNames.length - i)) + i;
-			[presentStudentNames[i], presentStudentNames[j]] = [
-				presentStudentNames[j],
-				presentStudentNames[i],
-			];
+		// If avoidPreviousGroups is enabled and we have previous groups
+		if (avoidPreviousGroups() && allHistoricalGroups().length > 0) {
+			// Create a map of student pairs that have been together before
+			const previousPairs = new Map<string, Set<string>>();
+
+			// For each previous group list
+			for (const groupList of allHistoricalGroups()) {
+				// For each group in the list
+				for (const group of groupList) {
+					// For each student in the group
+					for (const student of group) {
+						const studentName = `${student.name.toUpperCase()} ${student.first_name}`;
+						if (!previousPairs.has(studentName)) {
+							previousPairs.set(studentName, new Set());
+						}
+						// Add all other students in the same group to the set
+						for (const otherStudent of group) {
+							if (otherStudent !== student) {
+								const otherStudentName = `${otherStudent.name.toUpperCase()} ${otherStudent.first_name}`;
+								previousPairs.get(studentName)!.add(otherStudentName);
+							}
+						}
+					}
+				}
+			}
+
+			// Create groups trying to avoid previous pairs
+			const remainingStudents = [...presentStudentNames];
+			while (remainingStudents.length > 0) {
+				const currentGroup: string[] = [];
+
+				// Add first student to the group
+				if (remainingStudents.length > 0) {
+					currentGroup.push(remainingStudents.shift()!);
+				}
+
+				// Try to fill the rest of the group
+				while (
+					currentGroup.length < peoplePerGroup &&
+					remainingStudents.length > 0
+				) {
+					// Find the student with the least previous interactions with current group members
+					let bestStudentIndex = 0;
+					let minPreviousInteractions = Number.POSITIVE_INFINITY;
+
+					for (let i = 0; i < remainingStudents.length; i++) {
+						const student = remainingStudents[i];
+						let previousInteractions = 0;
+
+						// Count how many students in current group this student has been with before
+						for (const groupMember of currentGroup) {
+							const previousPairsForStudent =
+								previousPairs.get(student) || new Set();
+							if (previousPairsForStudent.has(groupMember)) {
+								previousInteractions++;
+							}
+						}
+
+						if (previousInteractions < minPreviousInteractions) {
+							minPreviousInteractions = previousInteractions;
+							bestStudentIndex = i;
+						}
+					}
+
+					// Add the best student to the group
+					currentGroup.push(remainingStudents.splice(bestStudentIndex, 1)[0]);
+				}
+
+				groups.push(currentGroup);
+			}
+		} else {
+			// Original random grouping logic
+			for (let i = 0; i < presentStudentNames.length - 1; i++) {
+				const j =
+					Math.floor(Math.random() * (presentStudentNames.length - i)) + i;
+				[presentStudentNames[i], presentStudentNames[j]] = [
+					presentStudentNames[j],
+					presentStudentNames[i],
+				];
+			}
+
+			while (start < presentStudentNames.length) {
+				groups.push(presentStudentNames.slice(start, start + peoplePerGroup));
+				start += peoplePerGroup;
+			}
 		}
 
-		while (start < presentStudentNames.length) {
-			groups.push(presentStudentNames.slice(start, start + peoplePerGroup));
-			start += peoplePerGroup;
-		}
 		return groups;
 	};
 
@@ -249,6 +327,7 @@ export default function InstructorView() {
 				<StudentStatsLoader />
 				<GroupsForCourseLoader />
 				<GroupsByListLoader />
+				<AllHistoricalGroupsLoader />
 			</Suspense>
 
 			<Title>FaceX - Tracking</Title>
@@ -469,10 +548,37 @@ export default function InstructorView() {
 										</Label>
 									</div>
 								</div>
+
+								<div class="flex items-start space-x-2">
+									<Checkbox
+										id="avoid-previous-groups"
+										checked={avoidPreviousGroups()}
+										onChange={(value) => {
+											setAvoidPreviousGroups(value);
+											setGroups(
+												createGroups(
+													peoplePerGroup(),
+													includeAbsents()
+														? attendances
+														: attendances.filter(
+																(a: { attendance_status: string }) =>
+																	a.attendance_status === "Present" ||
+																	a.attendance_status === "Late",
+															),
+												),
+											);
+										}}
+									/>
+									<div class="grid gap-1.5 leading-none">
+										<Label for="avoid-previous-groups-input">
+											Éviter les groupes précédents
+										</Label>
+									</div>
+								</div>
 							</div>
 
-							<Show when={peoplePerGroup() > 0}>
-								<div class="mt-4 max-w-full overflow-x-auto flex flex-wrap ">
+							<div class="mt-4 max-w-full overflow-x-auto flex flex-wrap flex-grow overflow-y-auto">
+								<Show when={peoplePerGroup() > 0}>
 									<For each={groups()}>
 										{(group, groupIndex) => (
 											<div class="flex items-start gap-4 flex-wrap w-full">
@@ -511,8 +617,8 @@ export default function InstructorView() {
 											</div>
 										)}
 									</For>
-								</div>
-							</Show>
+								</Show>
+							</div>
 							<DialogFooter>
 								<TextField
 									value={groupName()}
