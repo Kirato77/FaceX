@@ -52,6 +52,8 @@ export interface TrackingInstructorContextValue {
 	setGroupsByList: SetStoreFunction<User[][]>;
 	onRefetchGroupsForCourse: (callback: () => void) => void;
 	refetchGroupsForCourse: () => void;
+	allHistoricalGroups: Accessor<User[][][]>;
+	setAllHistoricalGroups: Setter<User[][][]>;
 }
 
 export const TrackingInstructorContext =
@@ -86,6 +88,9 @@ export function TrackingInstructorProvider(props: ParentProps) {
 	const [groupsForCourse, setGroupsForCourse] = createStore<Group[]>([]);
 	const [groupsByList, setGroupsByList] = createStore<User[][]>([]);
 	const [studentStats, setStudentStats] = createSignal<any>(null);
+	const [allHistoricalGroups, setAllHistoricalGroups] = createSignal<
+		User[][][]
+	>([]);
 
 	const [getOnRefetchCourses, onRefetchCourses] = createSignal<() => void>();
 	const [getOnRefetchAttendances, onRefetchAttendances] =
@@ -171,6 +176,8 @@ export function TrackingInstructorProvider(props: ParentProps) {
 				groupsByList,
 				setGroupsByList,
 				refetchGroupsForCourse: () => getOnRefetchGroupsForCourse()?.(),
+				allHistoricalGroups,
+				setAllHistoricalGroups,
 			}}
 		>
 			{props.children}
