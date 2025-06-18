@@ -1,11 +1,8 @@
 import {
-	For,
 	Suspense,
-	createResource,
 	createSignal,
 	getOwner,
 	onCleanup,
-	onMount,
 	runWithOwner,
 } from "solid-js";
 import { getSessionEmail } from "~/components/context";
