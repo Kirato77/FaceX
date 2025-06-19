@@ -18,6 +18,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { showToast } from "~/components/ui/toast";
 import { supabase } from "~/supabase-client";
 import IconCheckboxCircleLine from "~icons/ri/checkbox-circle-line";
 import IconLogoutBoxLine from "~icons/ri/logout-box-line";
@@ -26,15 +27,12 @@ import IconSunLine from "~icons/ri/sun-line";
 import IconUserLine from "~icons/ri/user-line";
 import IconWebcamLine from "~icons/ri/webcam-line";
 import { UserContextProvider, useUserContext } from "./context";
-import { showToast } from "~/components/ui/toast";
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
 function urlBase64ToUint8Array(base64String: string) {
-	const padding = '='.repeat((4 - base64String.length % 4) % 4);
-	const base64 = (base64String + padding)
-		.replace(/-/g, '+')
-		.replace(/_/g, '/');
+	const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+	const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
 	const rawData = window.atob(base64);
 	const outputArray = new Uint8Array(rawData.length);
 	for (let i = 0; i < rawData.length; ++i) {
@@ -53,41 +51,42 @@ export default function Navbar() {
 	async function handleEnablePushNotifications() {
 		if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 		try {
-			await navigator.serviceWorker.register('/sw.js');
+			await navigator.serviceWorker.register("/sw.js");
 			const permission = await Notification.requestPermission();
 			if (permission !== "granted") {
 				showToast({
 					title: "Permission refusée",
-					description: "Vous devez autoriser les notifications pour recevoir les push.",
-					variant: "warning"
+					description:
+						"Vous devez autoriser les notifications pour recevoir les push.",
+					variant: "warning",
 				});
 				return;
 			}
 			const registration = await navigator.serviceWorker.ready;
 			const subscription = await registration.pushManager.subscribe({
 				userVisibleOnly: true,
-				applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+				applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
 			});
 			const user_email = user()?.email;
 			if (user_email) {
 				const subscriptionObj = subscription.toJSON();
-				await supabase.from('webpush_subscriptions').upsert({
+				await supabase.from("webpush_subscriptions").upsert({
 					user_email,
 					subscription: subscriptionObj,
-					endpoint: subscriptionObj.endpoint
+					endpoint: subscriptionObj.endpoint,
 				});
 				setPushEnabled(true);
 				showToast({
 					title: "Notifications activées",
 					description: "Vous recevrez désormais des notifications push.",
-					variant: "success"
+					variant: "success",
 				});
 			}
 		} catch (err) {
 			showToast({
 				title: "Erreur",
 				description: "Impossible d'activer les notifications push.",
-				variant: "error"
+				variant: "error",
 			});
 		}
 	}

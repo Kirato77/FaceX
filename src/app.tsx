@@ -1,7 +1,17 @@
 import { MetaProvider, Title } from "@solidjs/meta";
 import { Route, Router } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
-import { Show, Suspense, createSignal, onCleanup, onMount, getOwner, runWithOwner, createEffect } from "solid-js";
+import {
+	Index,
+	Show,
+	Suspense,
+	createEffect,
+	createSignal,
+	getOwner,
+	onCleanup,
+	onMount,
+	runWithOwner,
+} from "solid-js";
 import "@fontsource/inter";
 import "./app.css";
 
@@ -19,7 +29,11 @@ import {
 } from "@kobalte/core";
 import { getCookie } from "vinxi/http";
 import LoginNavbar from "~/components/login-navbar";
-import { UserContextProvider, getSessionEmail, useUserContext } from "./components/context";
+import {
+	UserContextProvider,
+	getSessionEmail,
+	useUserContext,
+} from "./components/context";
 import { Toaster, showToast } from "./components/ui/toast";
 
 function getServerCookies() {
@@ -39,27 +53,40 @@ function NotificationsListener() {
 			.on(
 				"postgres_changes",
 				{ event: "INSERT", schema: "public", table: "notifications" },
-				(payload) => runWithOwner(owner, () => {
-					const notif = payload.new;
-					const allowedVariants = ["default", "success", "destructive", "error", "warning"];
-					const variant = allowedVariants.includes(notif.type) ? notif.type : "default";
-					if (notif.user_email === user()?.email) {
-						showToast({
-							title: notif.title,
-							description: (
-								<>
-									{notif.description.split(",").map((part: string, i: number, arr: string[]) => (
-										<span>
-											{part.trim()}
-											{i < arr.length - 1 && <br />}
-										</span>
-									))}
-								</>
-							),
-							variant
-						});
-					}
-				})
+				(payload) =>
+					runWithOwner(owner, () => {
+						const notif = payload.new;
+						const allowedVariants = [
+							"default",
+							"success",
+							"destructive",
+							"error",
+							"warning",
+						];
+						const variant = allowedVariants.includes(notif.type)
+							? notif.type
+							: "default";
+						if (notif.user_email === user()?.email) {
+							showToast({
+								title: notif.title,
+								description: (
+									<>
+										<Index each={notif.description.split(",")}>
+											{(part, i) => (
+												<span>
+													{part().trim()}
+													{i < notif.description.split(",").length - 1 && (
+														<br />
+													)}
+												</span>
+											)}
+										</Index>
+									</>
+								),
+								variant,
+							});
+						}
+					}),
 			)
 			.subscribe();
 
