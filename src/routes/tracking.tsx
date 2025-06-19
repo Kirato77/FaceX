@@ -5,7 +5,6 @@ import InstructorView from "~/components/tracking-instructor";
 import { TrackingInstructorProvider } from "~/components/tracking-instructor/context";
 import StudentView from "~/components/tracking-student";
 import { TrackingStudentProvider } from "~/components/tracking-student/context";
-import { Toaster } from "~/components/ui/toast";
 
 export default function TrackingPage() {
 	const { user } = useUserContext();
@@ -18,7 +17,6 @@ export default function TrackingPage() {
 				</TrackingStudentProvider>
 			}
 		>
-			<Toaster />
 			<TrackingInstructorProvider>
 				<InstructorView />
 			</TrackingInstructorProvider>
