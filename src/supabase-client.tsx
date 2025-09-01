@@ -23,6 +23,7 @@ export interface User {
 	matricule: string;
 	name: string;
 	first_name: string;
+	active?: boolean; // Optionnel pour la compatibilité
 }
 
 export interface Attendance {

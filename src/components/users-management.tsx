@@ -15,6 +15,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "~/components/ui/dialog";
+import { Label } from "~/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -47,6 +48,7 @@ interface User {
 	matricule: string;
 	name: string;
 	first_name: string;
+	active: boolean;
 }
 
 export function UsersManagement() {
@@ -63,6 +65,7 @@ export function UsersManagement() {
 		matricule: "",
 		name: "",
 		first_name: "",
+		active: true,
 	});
 
 	// Computed signal for filtered users
@@ -152,6 +155,7 @@ export function UsersManagement() {
 			matricule: user.matricule,
 			name: user.name,
 			first_name: user.first_name,
+			active: user.active,
 		});
 		setOpenDialog(true);
 	};
@@ -161,26 +165,49 @@ export function UsersManagement() {
 		setDeleteDialogOpen(true);
 	};
 
+	const handleReactivate = async (user: User) => {
+		try {
+			const { error } = await supabase
+				.from("users")
+				.update({ active: true })
+				.eq("email", user.email);
+
+			if (error) throw error;
+			showToast({
+				title: "Success",
+				description: "User reactivated successfully",
+			});
+			fetchUsers();
+		} catch (error) {
+			console.error("Error reactivating user:", error);
+			showToast({
+				title: "Error",
+				description: "Failed to reactivate user",
+				variant: "destructive",
+			});
+		}
+	};
+
 	const confirmDelete = async () => {
 		if (!userToDelete()) return;
 
 		try {
 			const { error } = await supabase
 				.from("users")
-				.delete()
+				.update({ active: false })
 				.eq("email", userToDelete()!.email);
 
 			if (error) throw error;
 			showToast({
 				title: "Success",
-				description: "User deleted successfully",
+				description: "User deactivated successfully",
 			});
 			fetchUsers();
 		} catch (error) {
-			console.error("Error deleting user:", error);
+			console.error("Error deactivating user:", error);
 			showToast({
 				title: "Error",
-				description: "Failed to delete user",
+				description: "Failed to deactivate user",
 				variant: "destructive",
 			});
 		} finally {
@@ -197,6 +224,7 @@ export function UsersManagement() {
 			matricule: "",
 			name: "",
 			first_name: "",
+			active: true,
 		});
 	};
 
@@ -244,13 +272,14 @@ export function UsersManagement() {
 									<TableHead class="min-w-[100px]">Matricule</TableHead>
 									<TableHead class="min-w-[100px]">Name</TableHead>
 									<TableHead class="min-w-[100px]">First Name</TableHead>
+									<TableHead class="min-w-[80px]">Status</TableHead>
 									<TableHead class="min-w-[120px]">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								<For each={filteredUsers()}>
 									{(user) => (
-										<TableRow>
+										<TableRow class={user.active ? "" : "opacity-50"}>
 											<TableCell class="font-medium break-all">
 												{user.email}
 											</TableCell>
@@ -271,6 +300,17 @@ export function UsersManagement() {
 											<TableCell class="break-all">{user.name}</TableCell>
 											<TableCell class="break-all">{user.first_name}</TableCell>
 											<TableCell>
+												<span
+													class={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+														user.active
+															? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+															: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300"
+													}`}
+												>
+													{user.active ? "Active" : "Inactive"}
+												</span>
+											</TableCell>
+											<TableCell>
 												<div class="flex flex-col sm:flex-row gap-2">
 													<Button
 														variant="outline"
@@ -281,15 +321,27 @@ export function UsersManagement() {
 														<IconEditLine class="w-4 h-4" />
 														Edit
 													</Button>
-													<Button
-														variant="outline"
-														size="sm"
-														onClick={() => handleDelete(user)}
-														class="gap-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 w-full sm:w-auto"
-													>
-														<IconDeleteBinLine class="w-4 h-4" />
-														Delete
-													</Button>
+													{user.active ? (
+														<Button
+															variant="outline"
+															size="sm"
+															onClick={() => handleDelete(user)}
+															class="gap-1 text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 w-full sm:w-auto"
+														>
+															<IconDeleteBinLine class="w-4 h-4" />
+															Deactivate
+														</Button>
+													) : (
+														<Button
+															variant="outline"
+															size="sm"
+															onClick={() => handleReactivate(user)}
+															class="gap-1 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 w-full sm:w-auto"
+														>
+															<IconDeleteBinLine class="w-4 h-4" />
+															Reactivate
+														</Button>
+													)}
 												</div>
 											</TableCell>
 										</TableRow>
@@ -329,23 +381,24 @@ export function UsersManagement() {
 							/>
 						</TextField>
 						<div class="flex flex-col gap-2">
-							<label class="text-sm font-medium">Role</label>
-							<div class="relative">
-								<select
-									value={formData().role}
-									onChange={(e) =>
-										setFormData((prev) => ({
-											...prev,
-											role: e.currentTarget.value as any,
-										}))
-									}
-									class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-								>
-									<option value="student">Student</option>
-									<option value="instructor">Instructor</option>
-									<option value="admin">Admin</option>
-								</select>
-							</div>
+							<Label class="text-sm font-medium">Role</Label>
+							<select
+								value={formData().role}
+								onChange={(e) =>
+									setFormData((prev) => ({
+										...prev,
+										role: e.currentTarget.value as
+											| "student"
+											| "instructor"
+											| "admin",
+									}))
+								}
+								class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+							>
+								<option value="student">Student</option>
+								<option value="instructor">Instructor</option>
+								<option value="admin">Admin</option>
+							</select>
 						</div>
 						<TextField>
 							<TextFieldLabel>Matricule</TextFieldLabel>
@@ -401,10 +454,11 @@ export function UsersManagement() {
 			<Dialog open={deleteDialogOpen()} onOpenChange={setDeleteDialogOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Confirm Deletion</DialogTitle>
+						<DialogTitle>Confirm Deactivation</DialogTitle>
 						<DialogDescription>
-							Are you sure you want to delete user "{userToDelete()?.email}"?
-							This action cannot be undone.
+							Are you sure you want to deactivate user "{userToDelete()?.email}
+							"? The user will not be able to access the system until
+							reactivated.
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
@@ -415,7 +469,7 @@ export function UsersManagement() {
 							Cancel
 						</Button>
 						<Button variant="destructive" onClick={confirmDelete}>
-							Delete
+							Deactivate
 						</Button>
 					</DialogFooter>
 				</DialogContent>
