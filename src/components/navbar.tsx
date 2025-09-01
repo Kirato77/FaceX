@@ -130,7 +130,7 @@ export default function Navbar() {
 			console.error("Error in handleEnablePushNotifications:", err);
 			showToast({
 				title: "Erreur",
-				description: `Impossible d'activer les notifications push: ${err instanceof Error ? err.message : 'Erreur inconnue'}`,
+				description: `Impossible d'activer les notifications push: ${err instanceof Error ? err.message : "Erreur inconnue"}`,
 				variant: "error",
 			});
 		}
