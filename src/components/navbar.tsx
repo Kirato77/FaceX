@@ -49,9 +49,35 @@ export default function Navbar() {
 	const [pushEnabled, setPushEnabled] = createSignal(false);
 
 	async function handleEnablePushNotifications() {
-		if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+		if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+			console.error("Service Worker or Push Manager not supported");
+			showToast({
+				title: "Erreur",
+				description: "Votre navigateur ne supporte pas les notifications push.",
+				variant: "error",
+			});
+			return;
+		}
+
 		try {
+			console.log("Starting push notification setup...");
+
+			// Vérifier que la clé VAPID est définie
+			if (!VAPID_PUBLIC_KEY) {
+				console.error("VAPID_PUBLIC_KEY is not defined");
+				showToast({
+					title: "Erreur de configuration",
+					description: "Clé VAPID manquante. Contactez l'administrateur.",
+					variant: "error",
+				});
+				return;
+			}
+
+			console.log("Registering service worker...");
 			await navigator.serviceWorker.register("/sw.js");
+			console.log("Service worker registered successfully");
+
+			console.log("Requesting notification permission...");
 			const permission = await Notification.requestPermission();
 			if (permission !== "granted") {
 				showToast({
@@ -62,30 +88,49 @@ export default function Navbar() {
 				});
 				return;
 			}
+			console.log("Notification permission granted");
+
+			console.log("Getting service worker registration...");
 			const registration = await navigator.serviceWorker.ready;
+			console.log("Service worker ready");
+
+			console.log("Creating push subscription...");
 			const subscription = await registration.pushManager.subscribe({
 				userVisibleOnly: true,
 				applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
 			});
+			console.log("Push subscription created successfully");
+
 			const user_email = user()?.email;
 			if (user_email) {
+				console.log("Saving subscription to database...");
 				const subscriptionObj = subscription.toJSON();
 				await supabase.from("webpush_subscriptions").upsert({
 					user_email,
 					subscription: subscriptionObj,
 					endpoint: subscriptionObj.endpoint,
 				});
+				console.log("Subscription saved to database");
+
 				setPushEnabled(true);
 				showToast({
 					title: "Notifications activées",
 					description: "Vous recevrez désormais des notifications push.",
 					variant: "success",
 				});
+			} else {
+				console.error("User email not available");
+				showToast({
+					title: "Erreur",
+					description: "Email utilisateur non disponible.",
+					variant: "error",
+				});
 			}
 		} catch (err) {
+			console.error("Error in handleEnablePushNotifications:", err);
 			showToast({
 				title: "Erreur",
-				description: "Impossible d'activer les notifications push.",
+				description: `Impossible d'activer les notifications push: ${err instanceof Error ? err.message : 'Erreur inconnue'}`,
 				variant: "error",
 			});
 		}
