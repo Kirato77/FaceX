@@ -31,6 +31,12 @@ export function UserContextProvider(props: ComponentProps<FlowComponent>) {
 	const [user, { refetch }] = createResource<User | undefined>(async () => {
 		const { data } = await supabase.auth.getUser();
 		const userEmail = data?.user?.email;
+
+		// Vérifier que l'utilisateur est connecté et a un email
+		if (!userEmail) {
+			return undefined;
+		}
+
 		const userData = getUserByEmail(userEmail);
 		return userData as Promise<User>;
 	});
