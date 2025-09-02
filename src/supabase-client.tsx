@@ -75,6 +75,18 @@ export async function getCoursesByInstructorId(instructorEmail: string) {
 	return data as Course[];
 }
 
+export async function getAllCourses() {
+	const { data, error } = await supabase
+		.from("courses")
+		.select("*")
+		.order("course_name");
+
+	if (error) {
+		throw new Error(`Error fetching all courses: ${error.message}`);
+	}
+	return data as Course[];
+}
+
 export async function getClassBlocksByCourseId(courseId: number) {
 	const { data, error } = await supabase.rpc("get_blocks_by_course", {
 		course_id: courseId,
