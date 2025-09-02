@@ -23,6 +23,7 @@ export interface User {
 	matricule: string;
 	name: string;
 	first_name: string;
+	active?: boolean; // Optionnel pour la compatibilité
 }
 
 export interface Attendance {
@@ -70,6 +71,18 @@ export async function getCoursesByInstructorId(instructorEmail: string) {
 		throw new Error(
 			`Error fetching data for get_courses_by_instructor: ${error.message}`,
 		);
+	}
+	return data as Course[];
+}
+
+export async function getAllCourses() {
+	const { data, error } = await supabase
+		.from("courses")
+		.select("*")
+		.order("course_name");
+
+	if (error) {
+		throw new Error(`Error fetching all courses: ${error.message}`);
 	}
 	return data as Course[];
 }

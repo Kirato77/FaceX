@@ -21,6 +21,7 @@ import {
 import { showToast } from "~/components/ui/toast";
 import { supabase } from "~/supabase-client";
 import IconCheckboxCircleLine from "~icons/ri/checkbox-circle-line";
+import IconGroupFill from "~icons/ri/group-fill";
 import IconLogoutBoxLine from "~icons/ri/logout-box-line";
 import IconMoonLine from "~icons/ri/moon-line";
 import IconSunLine from "~icons/ri/sun-line";
@@ -157,7 +158,19 @@ export default function Navbar() {
 						Tracking
 					</a>
 				</div>
-				<div class="flex items-center group cursor-pointer">
+
+				<Show when={user()?.role === "admin"}>
+					<div class="flex items-center group cursor-pointer">
+						<a
+							href="/users"
+							class={`flex flex-row ${location.pathname === "/users" ? "text-blue-500" : "group-hover:text-blue-500"}`}
+						>
+							<IconGroupFill class="w-6 h-6 mr-1" />
+							Users
+						</a>
+					</div>
+				</Show>
+				<div class="flex flex-wrap gap-2">
 					<DropdownMenu>
 						<DropdownMenuTrigger class="flex flex-row group-hover:text-blue-500">
 							<IconUserLine class="w-6 h-6 mr-1" />

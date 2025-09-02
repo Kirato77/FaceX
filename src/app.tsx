@@ -9,7 +9,6 @@ import {
 	createSignal,
 	getOwner,
 	onCleanup,
-	onMount,
 	runWithOwner,
 } from "solid-js";
 import "@fontsource/inter";
@@ -29,11 +28,7 @@ import {
 } from "@kobalte/core";
 import { getCookie } from "vinxi/http";
 import LoginNavbar from "~/components/login-navbar";
-import {
-	UserContextProvider,
-	getSessionEmail,
-	useUserContext,
-} from "./components/context";
+import { UserContextProvider, useUserContext } from "./components/context";
 import { Toaster, showToast } from "./components/ui/toast";
 
 function getServerCookies() {
