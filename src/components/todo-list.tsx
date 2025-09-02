@@ -1,4 +1,8 @@
 import { For, createSignal } from "solid-js";
+import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Label } from "~/components/ui/label";
+import { TextField, TextFieldInput } from "~/components/ui/text-field";
 
 type Todo = { id: number; text: string; completed: boolean };
 
@@ -19,10 +23,21 @@ export const TodoList = () => {
 
 	return (
 		<>
-			<div>
-				<input placeholder="new todo here" ref={input} />
-				<button
-					type="button"
+			<div class="flex gap-2">
+				<TextField class="flex-1">
+					<TextFieldInput
+						placeholder="new todo here"
+						ref={input}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" && !e.currentTarget.value.trim()) return;
+							if (e.key === "Enter") {
+								addTodo(e.currentTarget.value);
+								e.currentTarget.value = "";
+							}
+						}}
+					/>
+				</TextField>
+				<Button
 					onClick={() => {
 						if (!input.value.trim()) return;
 						addTodo(input.value);
@@ -30,25 +45,26 @@ export const TodoList = () => {
 					}}
 				>
 					Add Todo
-				</button>
+				</Button>
 			</div>
 			<For each={todos()}>
 				{(todo) => {
 					const { id, text } = todo;
 					return (
-						<div>
-							<input
-								type="checkbox"
+						<div class="flex items-center gap-2 py-1">
+							<Checkbox
+								id={`todo-${id}`}
 								checked={todo.completed}
-								onchange={[toggleTodo, id]}
+								onChange={() => toggleTodo(id)}
 							/>
-							<span
-								style={{
-									"text-decoration": todo.completed ? "line-through" : "none",
-								}}
+							<Label
+								for={`todo-${id}`}
+								class={
+									todo.completed ? "line-through text-muted-foreground" : ""
+								}
 							>
 								{text}
-							</span>
+							</Label>
 						</div>
 					);
 				}}
