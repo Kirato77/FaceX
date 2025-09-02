@@ -158,6 +158,7 @@ export default function Navbar() {
 						Tracking
 					</a>
 				</div>
+
 				<Show when={user()?.role === "admin"}>
 					<div class="flex items-center group cursor-pointer">
 						<a
@@ -170,6 +171,7 @@ export default function Navbar() {
 					</div>
 				</Show>
 				<div class="flex flex-wrap gap-2">
+          
 					<DropdownMenu>
 						<DropdownMenuTrigger class="flex flex-row group-hover:text-blue-500">
 							<IconUserLine class="w-6 h-6 mr-1" />
